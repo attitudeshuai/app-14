@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>填写寄养日报 - PetFoster</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .back-btn {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+        
+        .form-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .form-card h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .form-card .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .form-group label .required {
+            color: #ef4444;
+            margin-left: 4px;
+        }
+        
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+        
+        .upload-area .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .upload-area .text {
+            color: #4a5568;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .upload-area .hint {
+            color: #718096;
+            font-size: 13px;
+        }
+        
+        .upload-area input[type="file"] {
+            display: none;
+        }
+        
+        .preview-container {
+            margin-top: 20px;
+        }
+        
+        .preview-item {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 8px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .preview-item .remove-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 28px;
+            text-align: center;
+            padding: 0;
+            transition: background 0.2s;
+        }
+        
+        .preview-item .remove-btn:hover {
+            background: rgba(239, 68, 68, 0.9);
+        }
+        
+        .preview-item .uploading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .url-input-group {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .url-input-group .or-text {
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+        
+        .mood-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .mood-option {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .mood-option:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .mood-option.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+        
+        .mood-option .emoji {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-btn">← 返回首页</a>
+        
+        <div class="form-card">
+            <h1>📝 填写寄养日报</h1>
+            <p class="subtitle">记录宠物今天的状况，让主人随时了解</p>
+            
+            <form id="logForm">
+                <div class="form-group">
+                    <label for="requestId">寄养申请<span class="required">*</span></label>
+                    <select id="requestId" required>
+                        <option value="">请选择寄养申请</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="logDate">日志日期<span class="required">*</span></label>
+                    <input type="date" id="logDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="food">饮食情况</label>
+                    <textarea id="food" placeholder="例如：早餐吃了20g猫粮，午餐吃了湿粮，食欲很好"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>心情状态</label>
+                    <div class="mood-options" id="moodOptions">
+                        <div class="mood-option" data-mood="非常开心">
+                            <span class="emoji">😸</span>
+                            非常开心
+                        </div>
+                        <div class="mood-option" data-mood="心情不错">
+                            <span class="emoji">😊</span>
+                            心情不错
+                        </div>
+                        <div class="mood-option" data-mood="一般">
+                            <span class="emoji">😐</span>
+                            一般
+                        </div>
+                        <div class="mood-option" data-mood="有点低落">
+                            <span class="emoji">😔</span>
+                            有点低落
+                        </div>
+                        <div class="mood-option" data-mood="身体不适">
+                            <span class="emoji">😿</span>
+                            身体不适
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>照片记录</label>
+                    <div class="upload-area" id="uploadArea">
+                        <div class="icon">📷</div>
+                        <div class="text">点击或拖拽图片到此处上传</div>
+                        <div class="hint">支持多张上传，JPG、PNG、GIF、WEBP 格式，单张最大 5MB</div>
+                        <input type="file" id="photoInput" accept="image/*" multiple>
+                    </div>
+                    <div class="preview-container" id="previewContainer"></div>
+                    
+                    <div class="url-input-group">
+                        <div class="or-text">或添加外部图片链接（多个用逗号分隔）</div>
+                        <input type="text" id="photoUrls" placeholder="例如：https://example.com/photo1.jpg,https://example.com/photo2.jpg">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="note">备注说明</label>
+                    <textarea id="note" placeholder="例如：今天带狗狗下楼散步了30分钟，排便正常"></textarea>
+                </div>
+                
+                <button type="submit" class="btn" id="submitBtn">提交日报</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="js/common.js"></script>
+    <script>
+        let selectedFiles = [];
+        let uploadedPhotoUrls = [];
+        let isUploading = false;
+        let selectedMood = '';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            initUploadArea();
+            initMoodOptions();
+            loadFosterRequests();
+            setDefaultDate();
+            
+            document.getElementById('logForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await handleSubmit();
+            });
+        });
+        
+        function checkAuth() {
+            if (!authToken) {
+                showMessage('请先登录', 'error');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            }
+        }
+        
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('logDate').value = today;
+        }
+        
+        function initMoodOptions() {
+            const options = document.querySelectorAll('.mood-option');
+            options.forEach(option => {
+                option.addEventListener('click', function() {
+                    options.forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedMood = this.dataset.mood;
+                });
+            });
+        }
+        
+        async function loadFosterRequests() {
+            try {
+                const result = await getFosterRequests();
+                const select = document.getElementById('requestId');
+                
+                if (result && result.content && result.content.length > 0) {
+                    result.content.forEach(req => {
+                        if (req.status === 'InProgress' || req.status === 'Approved') {
+                            const option = document.createElement('option');
+                            option.value = req.id;
+                            option.textContent = `#${req.id} - ${req.petName} (${req.status === 'InProgress' ? '进行中' : '已批准'})`;
+                            select.appendChild(option);
+                        }
+                    });
+                }
+                
+                if (select.options.length <= 1) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = '暂无可用的寄养申请';
+                    option.disabled = true;
+                    select.appendChild(option);
+                }
+            } catch (error) {
+                console.error('加载寄养申请失败:', error);
+            }
+        }
+        
+        function initUploadArea() {
+            const uploadArea = document.getElementById('uploadArea');
+            const photoInput = document.getElementById('photoInput');
+            
+            uploadArea.addEventListener('click', () => photoInput.click());
+            
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                this.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                handleFilesSelect(files);
+            });
+            
+            photoInput.addEventListener('change', function(e) {
+                handleFilesSelect(e.target.files);
+            });
+        }
+        
+        function handleFilesSelect(files) {
+            const previewContainer = document.getElementById('previewContainer');
+            
+            for (let file of files) {
+                if (!file.type.startsWith('image/')) {
+                    showMessage('请选择图片文件', 'error');
+                    continue;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    showMessage('图片大小不能超过5MB', 'error');
+                    continue;
+                }
+                
+                selectedFiles.push(file);
+                
+                const fileIndex = selectedFiles.length - 1;
+                const preview = createImagePreview(file, function() {
+                    selectedFiles.splice(fileIndex, 1);
+                    uploadedPhotoUrls.splice(fileIndex, 1);
+                });
+                preview.dataset.index = fileIndex;
+                previewContainer.appendChild(preview);
+            }
+        }
+        
+        async function uploadPhotos() {
+            if (selectedFiles.length === 0) return [];
+            
+            isUploading = true;
+            updateSubmitButton();
+            
+            const previewItems = document.querySelectorAll('.preview-item');
+            const urls = [];
+            
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const previewItem = previewItems[i];
+                
+                if (previewItem) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'uploading-overlay';
+                    overlay.textContent = '上传中...';
+                    previewItem.appendChild(overlay);
+                }
+                
+                try {
+                    const url = await uploadImage(file);
+                    urls.push(url);
+                    uploadedPhotoUrls[i] = url;
+                } catch (error) {
+                    showMessage(`第${i + 1}张图片上传失败：${error.message}`, 'error');
+                    throw error;
+                } finally {
+                    if (previewItem) {
+                        const overlay = previewItem.querySelector('.uploading-overlay');
+                        if (overlay) overlay.remove();
+                    }
+                }
+            }
+            
+            isUploading = false;
+            updateSubmitButton();
+            
+            return urls;
+        }
+        
+        function updateSubmitButton() {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = isUploading;
+            btn.textContent = isUploading ? '上传中...' : '提交日报';
+        }
+        
+        async function handleSubmit() {
+            if (isUploading) return;
+            
+            const requestId = document.getElementById('requestId').value;
+            if (!requestId) {
+                showMessage('请选择寄养申请', 'error');
+                return;
+            }
+            
+            try {
+                let photoUrls = [];
+                
+                if (selectedFiles.length > 0) {
+                    photoUrls = await uploadPhotos();
+                }
+                
+                const urlInput = document.getElementById('photoUrls').value;
+                if (urlInput) {
+                    const externalUrls = urlInput.split(',').map(u => u.trim()).filter(u => u);
+                    photoUrls = [...photoUrls, ...externalUrls];
+                }
+                
+                const logData = {
+                    requestId: parseInt(requestId),
+                    logDate: document.getElementById('logDate').value,
+                    food: document.getElementById('food').value || null,
+                    mood: selectedMood || null,
+                    photos: photoUrls.length > 0 ? photoUrls.join(',') : null,
+                    note: document.getElementById('note').value || null
+                };
+                
+                const result = await createDailyLog(logData);
+                showMessage('日报提交成功！');
+                
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            } catch (error) {
+                if (!error.message.includes('上传失败')) {
+                    showMessage(error.message, 'error');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

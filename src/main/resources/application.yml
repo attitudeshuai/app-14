@@ -26,6 +26,17 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+file:
+  storage:
+    upload-dir: uploads
+    max-file-size: 5242880
+    allowed-extensions: .jpg,.jpeg,.png,.gif,.webp
+
 jwt:
   secret: ${JWT_SECRET:petfoster-super-secret-key-for-jwt-token-generation-123456-please-change-in-production}
   expiration: 86400000

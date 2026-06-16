@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建宠物档案 - PetFoster</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .back-btn {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+        
+        .form-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .form-card h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .form-card .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .form-group label .required {
+            color: #ef4444;
+            margin-left: 4px;
+        }
+        
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+        
+        .upload-area .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .upload-area .text {
+            color: #4a5568;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .upload-area .hint {
+            color: #718096;
+            font-size: 13px;
+        }
+        
+        .upload-area input[type="file"] {
+            display: none;
+        }
+        
+        .preview-container {
+            margin-top: 20px;
+        }
+        
+        .preview-item {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 8px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .preview-item .remove-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 28px;
+            text-align: center;
+            padding: 0;
+            transition: background 0.2s;
+        }
+        
+        .preview-item .remove-btn:hover {
+            background: rgba(239, 68, 68, 0.9);
+        }
+        
+        .preview-item .uploading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .url-input-group {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .url-input-group .or-text {
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-btn">← 返回首页</a>
+        
+        <div class="form-card">
+            <h1>🐱 创建宠物档案</h1>
+            <p class="subtitle">填写您爱宠的详细信息，上传可爱的照片</p>
+            
+            <form id="petForm">
+                <div class="form-group">
+                    <label for="name">宠物名称<span class="required">*</span></label>
+                    <input type="text" id="name" placeholder="例如：小白" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="species">宠物种类<span class="required">*</span></label>
+                    <select id="species" required>
+                        <option value="">请选择</option>
+                        <option value="猫">猫</option>
+                        <option value="狗">狗</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="breed">品种</label>
+                    <input type="text" id="breed" placeholder="例如：英国短毛猫">
+                </div>
+                
+                <div class="form-group">
+                    <label for="age">年龄</label>
+                    <input type="number" id="age" placeholder="例如：3" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label>宠物照片</label>
+                    <div class="upload-area" id="uploadArea">
+                        <div class="icon">📷</div>
+                        <div class="text">点击或拖拽图片到此处上传</div>
+                        <div class="hint">支持 JPG、PNG、GIF、WEBP 格式，最大 5MB</div>
+                        <input type="file" id="photoInput" accept="image/*">
+                    </div>
+                    <div class="preview-container" id="previewContainer"></div>
+                    
+                    <div class="url-input-group">
+                        <div class="or-text">或使用外部图片链接</div>
+                        <input type="text" id="photoUrl" placeholder="输入图片URL">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dietNotes">饮食注意事项</label>
+                    <textarea id="dietNotes" placeholder="例如：每天早晚各喂一次，每次20g猫粮"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="medicalNotes">医疗记录</label>
+                    <textarea id="medicalNotes" placeholder="例如：已接种疫苗，对青霉素过敏"></textarea>
+                </div>
+                
+                <button type="submit" class="btn" id="submitBtn">创建宠物档案</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="js/common.js"></script>
+    <script>
+        let selectedFile = null;
+        let uploadedPhotoUrl = '';
+        let isUploading = false;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            initUploadArea();
+            
+            document.getElementById('petForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await handleSubmit();
+            });
+        });
+        
+        function checkAuth() {
+            if (!authToken) {
+                showMessage('请先登录', 'error');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            }
+        }
+        
+        function initUploadArea() {
+            const uploadArea = document.getElementById('uploadArea');
+            const photoInput = document.getElementById('photoInput');
+            
+            uploadArea.addEventListener('click', () => photoInput.click());
+            
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                this.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect(files[0]);
+                }
+            });
+            
+            photoInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+        }
+        
+        function handleFileSelect(file) {
+            if (!file.type.startsWith('image/')) {
+                showMessage('请选择图片文件', 'error');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                showMessage('图片大小不能超过5MB', 'error');
+                return;
+            }
+            
+            selectedFile = file;
+            uploadedPhotoUrl = '';
+            document.getElementById('photoUrl').value = '';
+            
+            const previewContainer = document.getElementById('previewContainer');
+            previewContainer.innerHTML = '';
+            
+            const preview = createImagePreview(file, function() {
+                selectedFile = null;
+                previewContainer.innerHTML = '';
+            });
+            previewContainer.appendChild(preview);
+        }
+        
+        async function uploadPhoto() {
+            if (!selectedFile) return null;
+            
+            isUploading = true;
+            updateSubmitButton();
+            
+            const previewContainer = document.getElementById('previewContainer');
+            const previewItem = previewContainer.querySelector('.preview-item');
+            if (previewItem) {
+                const overlay = document.createElement('div');
+                overlay.className = 'uploading-overlay';
+                overlay.id = 'uploadingOverlay';
+                overlay.textContent = '上传中...';
+                previewItem.appendChild(overlay);
+            }
+            
+            try {
+                const url = await uploadImage(selectedFile);
+                uploadedPhotoUrl = url;
+                return url;
+            } catch (error) {
+                showMessage('图片上传失败：' + error.message, 'error');
+                throw error;
+            } finally {
+                isUploading = false;
+                updateSubmitButton();
+                
+                const overlay = document.getElementById('uploadingOverlay');
+                if (overlay) overlay.remove();
+            }
+        }
+        
+        function updateSubmitButton() {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = isUploading;
+            btn.textContent = isUploading ? '上传中...' : '创建宠物档案';
+        }
+        
+        async function handleSubmit() {
+            if (isUploading) return;
+            
+            const photoUrlInput = document.getElementById('photoUrl').value;
+            let finalPhotoUrl = '';
+            
+            try {
+                if (selectedFile) {
+                    finalPhotoUrl = await uploadPhoto();
+                } else if (photoUrlInput) {
+                    finalPhotoUrl = photoUrlInput;
+                }
+                
+                const petData = {
+                    name: document.getElementById('name').value,
+                    species: document.getElementById('species').value,
+                    breed: document.getElementById('breed').value || null,
+                    age: document.getElementById('age').value ? parseInt(document.getElementById('age').value) : null,
+                    dietNotes: document.getElementById('dietNotes').value || null,
+                    medicalNotes: document.getElementById('medicalNotes').value || null,
+                    photoUrl: finalPhotoUrl || null
+                };
+                
+                const result = await createPet(petData);
+                showMessage('宠物档案创建成功！');
+                
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            } catch (error) {
+                if (!error.message.includes('上传失败')) {
+                    showMessage(error.message, 'error');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

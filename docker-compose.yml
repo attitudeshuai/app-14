@@ -12,6 +12,8 @@ services:
       - DB_USER=app_user
       - DB_PASSWORD=app_pass
       - JWT_SECRET=petfoster-super-secret-key-for-jwt-token-generation-123456
+    volumes:
+      - uploads:/app/uploads
     depends_on:
       mysql:
         condition: service_healthy
@@ -38,3 +40,4 @@ services:
 
 volumes:
   mysql_data:
+  uploads:

@@ -55,7 +55,12 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
-                                "/error"
+                                "/error",
+                                "/uploads/**",
+                                "/*.html",
+                                "/js/**",
+                                "/css/**",
+                                "/images/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/pets/**",
