@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
@@ -19,6 +20,7 @@ public class DailyLogDTO {
         private Long requestId;
 
         @NotNull(message = "日志日期不能为空")
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         private LocalDate logDate;
 
         private String food;
@@ -32,6 +34,7 @@ public class DailyLogDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class UpdateLogRequest {
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         private LocalDate logDate;
         private String food;
         private String mood;

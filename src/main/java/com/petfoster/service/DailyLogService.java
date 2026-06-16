@@ -248,16 +248,17 @@ public class DailyLogService {
             String newPhotos = photoUrlList.isEmpty() ? null : String.join(",", photoUrlList);
             log.setPhotos(newPhotos);
 
+            log = logRepository.save(log);
+            log_info("寄养日报更新成功: logId={}, photoCount={}", logId, photoUrlList.size());
+
             if (replacePhotos && StringUtils.hasText(oldPhotos)) {
                 for (String oldPhotoUrl : oldPhotos.split(",")) {
                     if (StringUtils.hasText(oldPhotoUrl) && oldPhotoUrl.startsWith("/uploads/")) {
                         fileStorageService.deleteFile(oldPhotoUrl.trim());
                     }
                 }
+                log_info("旧日报照片已清理: logId={}, count={}", logId, oldPhotos.split(",").length);
             }
-
-            log = logRepository.save(log);
-            log_info("寄养日报更新成功: logId={}, photoCount={}", logId, photoUrlList.size());
 
             FosterRequest request = requestRepository.findById(log.getRequestId()).orElse(null);
             User fosterer = userRepository.findById(log.getFostererId()).orElse(null);
