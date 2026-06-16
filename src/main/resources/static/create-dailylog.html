@@ -529,37 +529,45 @@
             }
             
             try {
-                let photoUrls = [];
+                const formData = new FormData();
+                formData.append('requestId', requestId);
+                formData.append('logDate', document.getElementById('logDate').value);
                 
-                if (selectedFiles.length > 0) {
-                    photoUrls = await uploadPhotos();
+                const food = document.getElementById('food').value;
+                if (food) formData.append('food', food);
+                
+                if (selectedMood) {
+                    formData.append('mood', selectedMood);
                 }
+                
+                const note = document.getElementById('note').value;
+                if (note) formData.append('note', note);
                 
                 const urlInput = document.getElementById('photoUrls').value;
                 if (urlInput) {
-                    const externalUrls = urlInput.split(',').map(u => u.trim()).filter(u => u);
-                    photoUrls = [...photoUrls, ...externalUrls];
+                    formData.append('photos', urlInput);
                 }
                 
-                const logData = {
-                    requestId: parseInt(requestId),
-                    logDate: document.getElementById('logDate').value,
-                    food: document.getElementById('food').value || null,
-                    mood: selectedMood || null,
-                    photos: photoUrls.length > 0 ? photoUrls.join(',') : null,
-                    note: document.getElementById('note').value || null
-                };
+                if (selectedFiles.length > 0) {
+                    selectedFiles.forEach(file => {
+                        formData.append('photoFiles', file);
+                    });
+                }
                 
-                const result = await createDailyLog(logData);
+                isUploading = true;
+                updateSubmitButton();
+                
+                const result = await createDailyLogWithPhotos(formData);
                 showMessage('日报提交成功！');
                 
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 1500);
             } catch (error) {
-                if (!error.message.includes('上传失败')) {
-                    showMessage(error.message, 'error');
-                }
+                showMessage(error.message, 'error');
+            } finally {
+                isUploading = false;
+                updateSubmitButton();
             }
         }
     </script>

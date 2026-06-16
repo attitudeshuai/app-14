@@ -11,6 +11,9 @@ import java.time.LocalDate;
 public class DailyLogDTO {
 
     @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class CreateLogRequest {
         @NotNull(message = "寄养申请ID不能为空")
         private Long requestId;
@@ -25,6 +28,9 @@ public class DailyLogDTO {
     }
 
     @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class UpdateLogRequest {
         private LocalDate logDate;
         private String food;

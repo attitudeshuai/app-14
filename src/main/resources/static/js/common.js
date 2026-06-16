@@ -97,11 +97,47 @@ async function createPet(petData) {
     });
 }
 
+async function createPetWithPhoto(formData) {
+    const headers = {};
+    if (authToken) {
+        headers['Authorization'] = 'Bearer ' + authToken;
+    }
+    
+    const response = await fetch(API_BASE + '/api/pets/with-photo', {
+        method: 'POST',
+        headers: headers,
+        body: formData
+    });
+    const data = await response.json();
+    if (data.code !== 200) {
+        throw new Error(data.message || '创建失败');
+    }
+    return data.data;
+}
+
 async function createDailyLog(logData) {
     return await apiRequest('/api/fosterdailylogs', {
         method: 'POST',
         body: JSON.stringify(logData)
     });
+}
+
+async function createDailyLogWithPhotos(formData) {
+    const headers = {};
+    if (authToken) {
+        headers['Authorization'] = 'Bearer ' + authToken;
+    }
+    
+    const response = await fetch(API_BASE + '/api/fosterdailylogs/with-photos', {
+        method: 'POST',
+        headers: headers,
+        body: formData
+    });
+    const data = await response.json();
+    if (data.code !== 200) {
+        throw new Error(data.message || '创建失败');
+    }
+    return data.data;
 }
 
 async function getMyPets() {

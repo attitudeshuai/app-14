@@ -421,35 +421,46 @@
             if (isUploading) return;
             
             const photoUrlInput = document.getElementById('photoUrl').value;
-            let finalPhotoUrl = '';
             
             try {
-                if (selectedFile) {
-                    finalPhotoUrl = await uploadPhoto();
-                } else if (photoUrlInput) {
-                    finalPhotoUrl = photoUrlInput;
+                const formData = new FormData();
+                formData.append('name', document.getElementById('name').value);
+                formData.append('species', document.getElementById('species').value);
+                
+                const breed = document.getElementById('breed').value;
+                if (breed) formData.append('breed', breed);
+                
+                const age = document.getElementById('age').value;
+                if (age) formData.append('age', age);
+                
+                const dietNotes = document.getElementById('dietNotes').value;
+                if (dietNotes) formData.append('dietNotes', dietNotes);
+                
+                const medicalNotes = document.getElementById('medicalNotes').value;
+                if (medicalNotes) formData.append('medicalNotes', medicalNotes);
+                
+                if (photoUrlInput) {
+                    formData.append('photoUrl', photoUrlInput);
                 }
                 
-                const petData = {
-                    name: document.getElementById('name').value,
-                    species: document.getElementById('species').value,
-                    breed: document.getElementById('breed').value || null,
-                    age: document.getElementById('age').value ? parseInt(document.getElementById('age').value) : null,
-                    dietNotes: document.getElementById('dietNotes').value || null,
-                    medicalNotes: document.getElementById('medicalNotes').value || null,
-                    photoUrl: finalPhotoUrl || null
-                };
+                if (selectedFile) {
+                    formData.append('photo', selectedFile);
+                }
                 
-                const result = await createPet(petData);
+                isUploading = true;
+                updateSubmitButton();
+                
+                const result = await createPetWithPhoto(formData);
                 showMessage('宠物档案创建成功！');
                 
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 1500);
             } catch (error) {
-                if (!error.message.includes('上传失败')) {
-                    showMessage(error.message, 'error');
-                }
+                showMessage(error.message, 'error');
+            } finally {
+                isUploading = false;
+                updateSubmitButton();
             }
         }
     </script>

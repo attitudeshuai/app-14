@@ -29,6 +29,7 @@ public class PetService {
 
     private final PetRepository petRepository;
     private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
 
     public PageResponse<PetDTO.PetResponse> getPets(
             int page, int size, String sort, String name, String species, Long ownerId) {
@@ -118,6 +119,36 @@ public class PetService {
     }
 
     @Transactional
+    public PetDTO.PetResponse createPetWithPhoto(Long userId, PetDTO.CreatePetRequest request, org.springframework.web.multipart.MultipartFile photo) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> BusinessException.notFound("用户不存在"));
+
+        String photoUrl = request.getPhotoUrl();
+
+        if (photo != null && !photo.isEmpty()) {
+            photoUrl = fileStorageService.uploadFile(photo);
+            log.info("宠物照片上传成功: {}", photoUrl);
+        }
+
+        Pet pet = Pet.builder()
+                .ownerId(userId)
+                .name(request.getName())
+                .species(request.getSpecies())
+                .breed(request.getBreed())
+                .age(request.getAge())
+                .dietNotes(request.getDietNotes())
+                .medicalNotes(request.getMedicalNotes())
+                .photoUrl(photoUrl)
+                .build();
+
+        pet = petRepository.save(pet);
+        log.info("宠物创建成功(带照片): petId={}, ownerId={}, photoUrl={}", pet.getId(), userId, photoUrl);
+
+        User owner = userRepository.findById(userId).orElse(null);
+        return EntityMapper.toPetResponse(pet, owner);
+    }
+
+    @Transactional
     public PetDTO.PetResponse updatePet(Long userId, Long petId, PetDTO.UpdatePetRequest request) {
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> BusinessException.notFound("宠物不存在"));
@@ -150,6 +181,55 @@ public class PetService {
 
         pet = petRepository.save(pet);
         log.info("宠物信息更新成功: petId={}", petId);
+
+        User owner = userRepository.findById(pet.getOwnerId()).orElse(null);
+        return EntityMapper.toPetResponse(pet, owner);
+    }
+
+    @Transactional
+    public PetDTO.PetResponse updatePetWithPhoto(Long userId, Long petId, PetDTO.UpdatePetRequest request, org.springframework.web.multipart.MultipartFile photo) {
+        Pet pet = petRepository.findById(petId)
+                .orElseThrow(() -> BusinessException.notFound("宠物不存在"));
+
+        if (!pet.getOwnerId().equals(userId)) {
+            throw BusinessException.forbidden("无权限修改此宠物信息");
+        }
+
+        if (StringUtils.hasText(request.getName())) {
+            pet.setName(request.getName());
+        }
+        if (StringUtils.hasText(request.getSpecies())) {
+            pet.setSpecies(request.getSpecies());
+        }
+        if (request.getBreed() != null) {
+            pet.setBreed(request.getBreed());
+        }
+        if (request.getAge() != null) {
+            pet.setAge(request.getAge());
+        }
+        if (request.getDietNotes() != null) {
+            pet.setDietNotes(request.getDietNotes());
+        }
+        if (request.getMedicalNotes() != null) {
+            pet.setMedicalNotes(request.getMedicalNotes());
+        }
+        if (request.getPhotoUrl() != null) {
+            pet.setPhotoUrl(request.getPhotoUrl());
+        }
+
+        if (photo != null && !photo.isEmpty()) {
+            String oldPhotoUrl = pet.getPhotoUrl();
+            String newPhotoUrl = fileStorageService.uploadFile(photo);
+            pet.setPhotoUrl(newPhotoUrl);
+            log.info("宠物照片更新成功: petId={}, oldPhoto={}, newPhoto={}", petId, oldPhotoUrl, newPhotoUrl);
+
+            if (StringUtils.hasText(oldPhotoUrl) && oldPhotoUrl.startsWith("/uploads/")) {
+                fileStorageService.deleteFile(oldPhotoUrl);
+            }
+        }
+
+        pet = petRepository.save(pet);
+        log.info("宠物信息更新成功(带照片): petId={}", petId);
 
         User owner = userRepository.findById(pet.getOwnerId()).orElse(null);
         return EntityMapper.toPetResponse(pet, owner);

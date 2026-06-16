@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 public class PetDTO {
 
     @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class CreatePetRequest {
         @NotBlank(message = "宠物名称不能为空")
         private String name;
@@ -25,6 +28,9 @@ public class PetDTO {
     }
 
     @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class UpdatePetRequest {
         private String name;
         private String species;
