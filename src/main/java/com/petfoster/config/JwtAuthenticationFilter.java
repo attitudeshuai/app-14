@@ -43,11 +43,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (userOptional.isPresent()) {
                     User user = userOptional.get();
+                    String roleName = "ROLE_" + user.getRole().name();
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     user,
                                     null,
-                                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                                    Collections.singletonList(new SimpleGrantedAuthority(roleName))
                             );
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);

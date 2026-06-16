@@ -8,6 +8,7 @@ import com.petfoster.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,6 +57,7 @@ public class NotificationController {
 
     @PostMapping("/retry-failed")
     @Operation(summary = "手动重试失败消息", description = "需要管理员权限，手动重试所有死亡状态的通知")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Integer> retryFailedNotifications(@AuthenticationPrincipal User user) {
         int recovered = notificationService.retryAllDeadNotifications();
         return ApiResponse.success("重试完成", recovered);

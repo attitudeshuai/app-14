@@ -52,6 +52,7 @@ public class DataInitializer implements CommandLineRunner {
                 .email("zhangsan@example.com")
                 .passwordHash(passwordEncoder.encode("123456"))
                 .avatar("https://api.dicebear.com/7.x/avataaars/svg?seed=zhangsan")
+                .role(User.Role.ADMIN)
                 .build();
         userRepository.save(user1);
 
