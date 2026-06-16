@@ -4,14 +4,17 @@ import com.petfoster.common.BusinessException;
 import com.petfoster.common.PageResponse;
 import com.petfoster.dto.FosterRequestDTO;
 import com.petfoster.entity.FosterRequest;
+import com.petfoster.entity.Notification;
 import com.petfoster.entity.Pet;
 import com.petfoster.entity.User;
+import com.petfoster.event.NotificationEvent;
 import com.petfoster.repository.FosterRequestRepository;
 import com.petfoster.repository.PetRepository;
 import com.petfoster.repository.UserRepository;
 import com.petfoster.util.EntityMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,7 +38,7 @@ public class FosterRequestService {
     private final FosterRequestRepository requestRepository;
     private final PetRepository petRepository;
     private final UserRepository userRepository;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     private static final Set<FosterRequest.Status> ALLOWED_FROM_PENDING = Set.of(
             FosterRequest.Status.Approved, FosterRequest.Status.Cancelled);
@@ -113,15 +116,17 @@ public class FosterRequestService {
             String petName = pet.getName();
             User owner = userRepository.findById(userId).orElse(null);
             String ownerName = owner != null ? owner.getUsername() : "某位主人";
-            notificationService.sendNotification(
-                    req.getFostererId(),
-                    com.petfoster.entity.Notification.Type.FOSTER_REQUEST_CREATED,
-                    "收到新的寄养申请",
-                    String.format("%s 邀请您帮忙寄养宠物「%s」，寄养时间：%s 至 %s",
-                            ownerName, petName, req.getStartDate(), req.getEndDate()),
-                    request.getId(),
-                    com.petfoster.entity.Notification.RelatedType.FOSTER_REQUEST
-            );
+            eventPublisher.publishEvent(new NotificationEvent(List.of(
+                    NotificationEvent.entry(
+                            req.getFostererId(),
+                            Notification.Type.FOSTER_REQUEST_CREATED,
+                            "收到新的寄养申请",
+                            String.format("%s 邀请您帮忙寄养宠物「%s」，寄养时间：%s 至 %s",
+                                    ownerName, petName, req.getStartDate(), req.getEndDate()),
+                            request.getId(),
+                            Notification.RelatedType.FOSTER_REQUEST
+                    )
+            )));
         }
 
         return buildSingleResponse(request);
@@ -199,25 +204,27 @@ public class FosterRequestService {
         String content = String.format("%s 将宠物「%s」的寄养申请状态更新为「%s」",
                 operatorName, petName, statusText);
 
+        List<NotificationEvent.NotificationEntry> entries = new java.util.ArrayList<>();
         if (!request.getOwnerId().equals(userId)) {
-            notificationService.sendNotification(
+            entries.add(NotificationEvent.entry(
                     request.getOwnerId(),
-                    com.petfoster.entity.Notification.Type.FOSTER_REQUEST_STATUS,
-                    title,
-                    content,
+                    Notification.Type.FOSTER_REQUEST_STATUS,
+                    title, content,
                     request.getId(),
-                    com.petfoster.entity.Notification.RelatedType.FOSTER_REQUEST
-            );
+                    Notification.RelatedType.FOSTER_REQUEST
+            ));
         }
         if (request.getFostererId() != null && !request.getFostererId().equals(userId)) {
-            notificationService.sendNotification(
+            entries.add(NotificationEvent.entry(
                     request.getFostererId(),
-                    com.petfoster.entity.Notification.Type.FOSTER_REQUEST_STATUS,
-                    title,
-                    content,
+                    Notification.Type.FOSTER_REQUEST_STATUS,
+                    title, content,
                     request.getId(),
-                    com.petfoster.entity.Notification.RelatedType.FOSTER_REQUEST
-            );
+                    Notification.RelatedType.FOSTER_REQUEST
+            ));
+        }
+        if (!entries.isEmpty()) {
+            eventPublisher.publishEvent(new NotificationEvent(entries));
         }
 
         return buildSingleResponse(request);

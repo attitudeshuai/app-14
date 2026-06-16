@@ -5,13 +5,16 @@ import com.petfoster.common.PageResponse;
 import com.petfoster.dto.DailyLogDTO;
 import com.petfoster.entity.FosterDailyLog;
 import com.petfoster.entity.FosterRequest;
+import com.petfoster.entity.Notification;
 import com.petfoster.entity.User;
+import com.petfoster.event.NotificationEvent;
 import com.petfoster.repository.FosterDailyLogRepository;
 import com.petfoster.repository.FosterRequestRepository;
 import com.petfoster.repository.UserRepository;
 import com.petfoster.util.EntityMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,7 +36,7 @@ public class DailyLogService {
     private final FosterDailyLogRepository logRepository;
     private final FosterRequestRepository requestRepository;
     private final UserRepository userRepository;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public PageResponse<DailyLogDTO.LogResponse> getLogs(
             int page, int size, String sort,
@@ -96,15 +99,26 @@ public class DailyLogService {
         User fosterer = userRepository.findById(userId).orElse(null);
         String fostererName = fosterer != null ? fosterer.getUsername() : "寄养人";
 
-        notificationService.sendNotification(
+        List<NotificationEvent.NotificationEntry> entries = new java.util.ArrayList<>();
+        entries.add(NotificationEvent.entry(
                 request.getOwnerId(),
-                com.petfoster.entity.Notification.Type.DAILY_LOG_CREATED,
+                Notification.Type.DAILY_LOG_CREATED,
                 "新的寄养日报已发布",
                 String.format("%s 发布了 %s 的寄养日报，请及时查看。",
                         fostererName, req.getLogDate()),
                 log.getId(),
-                com.petfoster.entity.Notification.RelatedType.DAILY_LOG
-        );
+                Notification.RelatedType.DAILY_LOG
+        ));
+        entries.add(NotificationEvent.entry(
+                userId,
+                Notification.Type.DAILY_LOG_CREATED,
+                "寄养日报创建成功",
+                String.format("您成功发布了 %s 的寄养日报。",
+                        req.getLogDate()),
+                log.getId(),
+                Notification.RelatedType.DAILY_LOG
+        ));
+        eventPublisher.publishEvent(new NotificationEvent(entries));
 
         return EntityMapper.toDailyLogResponse(log, fosterer);
     }
@@ -159,15 +173,26 @@ public class DailyLogService {
         String fostererName = fosterer != null ? fosterer.getUsername() : "寄养人";
 
         if (request != null) {
-            notificationService.sendNotification(
+            List<NotificationEvent.NotificationEntry> entries = new java.util.ArrayList<>();
+            entries.add(NotificationEvent.entry(
                     request.getOwnerId(),
-                    com.petfoster.entity.Notification.Type.DAILY_LOG_UPDATED,
+                    Notification.Type.DAILY_LOG_UPDATED,
                     "寄养日报已更新",
                     String.format("%s 更新了 %s 的寄养日报，请及时查看。",
                             fostererName, log.getLogDate()),
                     log.getId(),
-                    com.petfoster.entity.Notification.RelatedType.DAILY_LOG
-            );
+                    Notification.RelatedType.DAILY_LOG
+            ));
+            entries.add(NotificationEvent.entry(
+                    log.getFostererId(),
+                    Notification.Type.DAILY_LOG_UPDATED,
+                    "寄养日报更新成功",
+                    String.format("您成功更新了 %s 的寄养日报。",
+                            log.getLogDate()),
+                    log.getId(),
+                    Notification.RelatedType.DAILY_LOG
+            ));
+            eventPublisher.publishEvent(new NotificationEvent(entries));
         }
 
         return EntityMapper.toDailyLogResponse(log, fosterer);
