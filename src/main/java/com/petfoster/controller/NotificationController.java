@@ -53,4 +53,11 @@ public class NotificationController {
         notificationService.markAllAsRead(user.getId());
         return ApiResponse.success("全部标记成功", null);
     }
+
+    @PostMapping("/retry-failed")
+    @Operation(summary = "手动重试失败消息", description = "需要管理员权限，手动重试所有死亡状态的通知")
+    public ApiResponse<Integer> retryFailedNotifications(@AuthenticationPrincipal User user) {
+        int recovered = notificationService.retryAllDeadNotifications();
+        return ApiResponse.success("重试完成", recovered);
+    }
 }

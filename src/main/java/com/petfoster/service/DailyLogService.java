@@ -112,8 +112,8 @@ public class DailyLogService {
         entries.add(NotificationEvent.entry(
                 userId,
                 Notification.Type.DAILY_LOG_CREATED,
-                "寄养日报创建成功",
-                String.format("您成功发布了 %s 的寄养日报。",
+                "寄养日报已发布",
+                String.format("您已发布 %s 的寄养日报，请持续记录宠物每日状况。",
                         req.getLogDate()),
                 log.getId(),
                 Notification.RelatedType.DAILY_LOG
@@ -186,8 +186,8 @@ public class DailyLogService {
             entries.add(NotificationEvent.entry(
                     log.getFostererId(),
                     Notification.Type.DAILY_LOG_UPDATED,
-                    "寄养日报更新成功",
-                    String.format("您成功更新了 %s 的寄养日报。",
+                    "寄养日报已更新",
+                    String.format("您已更新 %s 的寄养日报，请继续关注宠物状况并及时记录。",
                             log.getLogDate()),
                     log.getId(),
                     Notification.RelatedType.DAILY_LOG
