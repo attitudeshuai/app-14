@@ -16,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -190,8 +192,14 @@ public class PetService {
             log.info("宠物信息更新成功: petId={}", petId);
 
             if (newUploadedPhotoUrl != null && StringUtils.hasText(oldPhotoUrl) && oldPhotoUrl.startsWith("/uploads/")) {
-                fileStorageService.deleteFile(oldPhotoUrl);
-                log.info("旧宠物照片已清理: petId={}, oldPhoto={}", petId, oldPhotoUrl);
+                String oldPhotoToDelete = oldPhotoUrl;
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        fileStorageService.deleteFile(oldPhotoToDelete);
+                        log.info("旧宠物照片已清理(事务提交后): petId={}, oldPhoto={}", petId, oldPhotoToDelete);
+                    }
+                });
             }
 
             User owner = userRepository.findById(pet.getOwnerId()).orElse(null);

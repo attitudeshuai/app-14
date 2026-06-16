@@ -21,6 +21,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
@@ -252,12 +254,18 @@ public class DailyLogService {
             log_info("寄养日报更新成功: logId={}, photoCount={}", logId, photoUrlList.size());
 
             if (replacePhotos && StringUtils.hasText(oldPhotos)) {
-                for (String oldPhotoUrl : oldPhotos.split(",")) {
-                    if (StringUtils.hasText(oldPhotoUrl) && oldPhotoUrl.startsWith("/uploads/")) {
-                        fileStorageService.deleteFile(oldPhotoUrl.trim());
+                String oldPhotosToDelete = oldPhotos;
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        for (String oldPhotoUrl : oldPhotosToDelete.split(",")) {
+                            if (StringUtils.hasText(oldPhotoUrl) && oldPhotoUrl.startsWith("/uploads/")) {
+                                fileStorageService.deleteFile(oldPhotoUrl.trim());
+                            }
+                        }
+                        log_info("旧日报照片已清理(事务提交后): logId={}, count={}", logId, oldPhotosToDelete.split(",").length);
                     }
-                }
-                log_info("旧日报照片已清理: logId={}, count={}", logId, oldPhotos.split(",").length);
+                });
             }
 
             FosterRequest request = requestRepository.findById(log.getRequestId()).orElse(null);
