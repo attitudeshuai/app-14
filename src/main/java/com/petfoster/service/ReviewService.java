@@ -1,0 +1,182 @@
+package com.petfoster.service;
+
+import com.petfoster.common.BusinessException;
+import com.petfoster.common.PageResponse;
+import com.petfoster.dto.ReviewDTO;
+import com.petfoster.entity.FosterRequest;
+import com.petfoster.entity.FosterReview;
+import com.petfoster.entity.User;
+import com.petfoster.repository.FosterRequestRepository;
+import com.petfoster.repository.FosterReviewRepository;
+import com.petfoster.repository.UserRepository;
+import com.petfoster.util.EntityMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class ReviewService {
+
+    private final FosterReviewRepository reviewRepository;
+    private final FosterRequestRepository requestRepository;
+    private final UserRepository userRepository;
+
+    public PageResponse<ReviewDTO.ReviewResponse> getReviews(
+            int page, int size, String sort,
+            Long requestId, Long reviewerId, Long revieweeId,
+            Integer minRating, Integer maxRating) {
+
+        Sort sortObj = parseSort(sort);
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+
+        Page<FosterReview> reviewPage = reviewRepository.searchReviews(
+                requestId, reviewerId, revieweeId, minRating, maxRating, pageable);
+
+        return buildPageResponse(reviewPage);
+    }
+
+    public ReviewDTO.ReviewResponse getReviewById(Long id) {
+        FosterReview review = reviewRepository.findById(id)
+                .orElseThrow(() -> BusinessException.notFound("评价不存在"));
+        return buildSingleResponse(review);
+    }
+
+    @Transactional
+    public ReviewDTO.ReviewResponse createReview(Long userId, ReviewDTO.CreateReviewRequest req) {
+        FosterRequest request = requestRepository.findById(req.getRequestId())
+                .orElseThrow(() -> BusinessException.notFound("寄养申请不存在"));
+
+        if (request.getStatus() != FosterRequest.Status.Completed) {
+            throw BusinessException.badRequest("只能对已完成的寄养申请进行评价");
+        }
+
+        boolean isOwner = request.getOwnerId().equals(userId);
+        boolean isFosterer = request.getFostererId() != null
+                && request.getFostererId().equals(userId);
+        if (!isOwner && !isFosterer) {
+            throw BusinessException.forbidden("只有参与寄养的双方才能评价");
+        }
+
+        Long expectedRevieweeId = isOwner ? request.getFostererId() : request.getOwnerId();
+        if (!req.getRevieweeId().equals(expectedRevieweeId)) {
+            throw BusinessException.badRequest("被评价人ID不正确，应该评价对方用户");
+        }
+
+        if (reviewRepository.existsByRequestIdAndReviewerId(req.getRequestId(), userId)) {
+            throw BusinessException.badRequest("您已对此寄养申请进行过评价");
+        }
+
+        FosterReview review = FosterReview.builder()
+                .requestId(req.getRequestId())
+                .reviewerId(userId)
+                .revieweeId(req.getRevieweeId())
+                .rating(req.getRating())
+                .content(req.getContent())
+                .build();
+
+        review = reviewRepository.save(review);
+        log.info("评价创建成功: reviewId={}, requestId={}, reviewerId={}",
+                review.getId(), req.getRequestId(), userId);
+
+        return buildSingleResponse(review);
+    }
+
+    @Transactional
+    public ReviewDTO.ReviewResponse updateReview(
+            Long userId, Long reviewId, ReviewDTO.UpdateReviewRequest req) {
+
+        FosterReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> BusinessException.notFound("评价不存在"));
+
+        if (!review.getReviewerId().equals(userId)) {
+            throw BusinessException.forbidden("无权限修改此评价");
+        }
+
+        if (req.getRating() != null) {
+            review.setRating(req.getRating());
+        }
+        if (req.getContent() != null) {
+            review.setContent(req.getContent());
+        }
+
+        review = reviewRepository.save(review);
+        log.info("评价更新成功: reviewId={}", reviewId);
+
+        return buildSingleResponse(review);
+    }
+
+    @Transactional
+    public void deleteReview(Long userId, Long reviewId) {
+        FosterReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> BusinessException.notFound("评价不存在"));
+
+        if (!review.getReviewerId().equals(userId)) {
+            throw BusinessException.forbidden("无权限删除此评价");
+        }
+
+        reviewRepository.delete(review);
+        log.info("评价删除成功: reviewId={}, userId={}", reviewId, userId);
+    }
+
+    private PageResponse<ReviewDTO.ReviewResponse> buildPageResponse(Page<FosterReview> page) {
+        Set<Long> userIds = page.getContent().stream()
+                .flatMap(r -> Stream.of(r.getReviewerId(), r.getRevieweeId()))
+                .collect(Collectors.toSet());
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+
+        List<ReviewDTO.ReviewResponse> content = page.getContent().stream()
+                .map(r -> EntityMapper.toReviewResponse(
+                        r,
+                        userMap.get(r.getReviewerId()),
+                        userMap.get(r.getRevieweeId())
+                ))
+                .toList();
+
+        return PageResponse.<ReviewDTO.ReviewResponse>builder()
+                .content(content)
+                .pageNumber(page.getNumber())
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .first(page.isFirst())
+                .last(page.isLast())
+                .build();
+    }
+
+    private ReviewDTO.ReviewResponse buildSingleResponse(FosterReview r) {
+        User reviewer = userRepository.findById(r.getReviewerId()).orElse(null);
+        User reviewee = userRepository.findById(r.getRevieweeId()).orElse(null);
+        return EntityMapper.toReviewResponse(r, reviewer, reviewee);
+    }
+
+    private Sort parseSort(String sort) {
+        if (!StringUtils.hasText(sort)) {
+            return Sort.by(Sort.Direction.DESC, "createdAt");
+        }
+        String[] parts = sort.split(",");
+        String field = parts[0];
+        Sort.Direction direction = parts.length > 1 && "asc".equalsIgnoreCase(parts[1])
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        return switch (field) {
+            case "rating" -> Sort.by(direction, "rating");
+            case "createdAt", "created_at" -> Sort.by(direction, "createdAt");
+            default -> Sort.by(Sort.Direction.DESC, "createdAt");
+        };
+    }
+}

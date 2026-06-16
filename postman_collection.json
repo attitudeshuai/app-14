@@ -1,0 +1,601 @@
+{
+  "info": {
+    "name": "PetFoster 邻里宠物互助寄养平台 API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0",
+    "description": "覆盖所有接口的功能测试集合"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8084", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" },
+    { "key": "petId", "value": "", "type": "string" },
+    { "key": "requestId", "value": "", "type": "string" },
+    { "key": "logId", "value": "", "type": "string" },
+    { "key": "reviewId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "0. 基础检查",
+      "item": [
+        {
+          "name": "健康检查",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/actuator/health"
+          }
+        },
+        {
+          "name": "Swagger文档",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v3/api-docs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. 用户认证模块",
+      "item": [
+        {
+          "name": "1.1 用户注册 - zhangsan(已存在，期望失败)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"zhangsan\",\"email\":\"zhangsan_new@test.com\",\"password\":\"123456\",\"avatar\":\"https://api.dicebear.com/7.x/avataaars/svg?seed=zhangsan\"}"
+            }
+          }
+        },
+        {
+          "name": "1.2 用户注册 - 新用户testuser001",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"注册成功\", function () { pm.response.to.have.status(200); pm.expect(jsonData.code).to.eql(200); });",
+                  "if (jsonData.data && jsonData.data.token) {",
+                  "  pm.collectionVariables.set(\"token\", jsonData.data.token);",
+                  "  pm.collectionVariables.set(\"userId\", jsonData.data.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"testuser001\",\"email\":\"testuser001@test.com\",\"password\":\"123456\",\"avatar\":\"https://api.dicebear.com/7.x/avataaars/svg?seed=testuser001\"}"
+            }
+          }
+        },
+        {
+          "name": "1.3 用户登录 - zhangsan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"登录成功\", function () { pm.response.to.have.status(200); pm.expect(jsonData.code).to.eql(200); });",
+                  "if (jsonData.data && jsonData.data.token) {",
+                  "  pm.collectionVariables.set(\"token\", jsonData.data.token);",
+                  "  pm.collectionVariables.set(\"userId\", jsonData.data.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"zhangsan\",\"password\":\"123456\"}"
+            }
+          }
+        },
+        {
+          "name": "1.4 用户登录 - 错误密码(期望401)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"zhangsan\",\"password\":\"wrongpass\"}"
+            }
+          }
+        },
+        {
+          "name": "1.5 获取当前用户信息",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "1.6 获取当前用户 - 无Token(期望401/403)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "1.7 更新个人信息(头像)",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/auth/me",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"avatar\":\"https://api.dicebear.com/7.x/avataaars/svg?seed=zhangsan_new\"}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. 宠物管理模块",
+      "item": [
+        {
+          "name": "2.1 获取宠物列表(第1页，每页5条)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/pets?page=0&size=5&sort=createdAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pets"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "5" },
+                { "key": "sort", "value": "createdAt,desc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.2 搜索宠物 - 按名称搜索'白'",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pets?name=白&page=0&size=10"
+          }
+        },
+        {
+          "name": "2.3 搜索宠物 - 按物种筛选'猫'",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pets?species=猫&page=0&size=10"
+          }
+        },
+        {
+          "name": "2.4 获取宠物详情 - ID=1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "  pm.collectionVariables.set(\"petId\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pets/1"
+          }
+        },
+        {
+          "name": "2.5 获取不存在的宠物(期望404)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pets/99999"
+          }
+        },
+        {
+          "name": "2.6 获取我的宠物",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pets/mine?page=0&size=10",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "2.7 创建宠物",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "  pm.collectionVariables.set(\"petId\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pets",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"小灰灰\",\"species\":\"猫\",\"breed\":\"狸花猫\",\"age\":2,\"dietNotes\":\"每天两次猫粮，加水煮鸡胸肉\",\"medicalNotes\":\"已绝育，身体健康\",\"photoUrl\":\"https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400\"}"
+            }
+          }
+        },
+        {
+          "name": "2.8 创建宠物 - 未登录(期望401/403)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pets",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"测试宠物\",\"species\":\"狗\"}"
+            }
+          }
+        },
+        {
+          "name": "2.9 更新宠物信息",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/pets/{{petId}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"age\":3,\"medicalNotes\":\"已绝育，身体健康，性格活泼\"}"
+            }
+          }
+        },
+        {
+          "name": "2.10 删除宠物 - (如需要删除取消注释，使用petId)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/pets/{{petId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. 寄养申请管理模块",
+      "item": [
+        {
+          "name": "3.1 获取寄养申请列表",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/fosterrequests?page=0&size=10"
+          }
+        },
+        {
+          "name": "3.2 获取寄养申请 - 按状态筛选Pending",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/fosterrequests?status=Pending&page=0&size=10"
+          }
+        },
+        {
+          "name": "3.3 获取寄养申请详情 - ID=1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "  pm.collectionVariables.set(\"requestId\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/fosterrequests/1"
+          }
+        },
+        {
+          "name": "3.4 获取我的寄养申请",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/fosterrequests/mine?page=0&size=10",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "3.5 创建寄养申请",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "  pm.collectionVariables.set(\"requestId\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/fosterrequests",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"petId\":1,\"fostererId\":2,\"startDate\":\"2026-07-01\",\"endDate\":\"2026-07-07\",\"dailyCareNotes\":\"出差一周，麻烦帮忙照顾小白，每天早晚各喂一次，记得清理猫砂盆，它喜欢玩逗猫棒。\"}"
+            }
+          }
+        },
+        {
+          "name": "3.6 更新寄养申请",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/fosterrequests/{{requestId}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"endDate\":\"2026-07-08\",\"dailyCareNotes\":\"出差延期一天，其他照原计划进行。\"}"
+            }
+          }
+        },
+        {
+          "name": "3.7 修改寄养申请状态 - Approved",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/fosterrequests/{{requestId}}/status",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"Approved\"}"
+            }
+          }
+        },
+        {
+          "name": "3.8 删除寄养申请(如有需要)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/fosterrequests/{{requestId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. 寄养日报管理模块",
+      "item": [
+        {
+          "name": "4.1 获取寄养日报列表",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/fosterdailylogs?page=0&size=10"
+          }
+        },
+        {
+          "name": "4.2 按寄养申请ID获取日报 - requestId=1",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/fosterdailylogs?requestId=1&page=0&size=10"
+          }
+        },
+        {
+          "name": "4.3 获取日报详情 - ID=1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "  pm.collectionVariables.set(\"logId\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/fosterdailylogs/1"
+          }
+        },
+        {
+          "name": "4.4 创建寄养日报(使用申请ID=2,日期范围内)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "  pm.collectionVariables.set(\"logId\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/fosterdailylogs",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"requestId\":2,\"logDate\":\"2026-06-10\",\"food\":\"早餐正常，晚餐吃了很多\",\"mood\":\"今天很活泼，玩了很久\",\"photos\":\"https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=300\",\"note\":\"状态很好，不用担心。\"}"
+            }
+          }
+        },
+        {
+          "name": "4.5 更新寄养日报",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/fosterdailylogs/{{logId}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mood\":\"今天状态超好，特别粘人\",\"note\":\"又多拍了几张可爱的照片，已更新。\"}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. 寄养评价管理模块",
+      "item": [
+        {
+          "name": "5.1 获取评价列表",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/fosterreviews?page=0&size=10"
+          }
+        },
+        {
+          "name": "5.2 按评分筛选 - 4-5星",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/fosterreviews?minRating=4&maxRating=5&page=0&size=10"
+          }
+        },
+        {
+          "name": "5.3 获取评价详情 - ID=1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "  pm.collectionVariables.set(\"reviewId\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/fosterreviews/1"
+          }
+        },
+        {
+          "name": "5.4 创建评价(使用已完成的申请ID=1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "  pm.collectionVariables.set(\"reviewId\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/fosterreviews",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"requestId\":1,\"revieweeId\":2,\"rating\":5,\"content\":\"非常感谢邻居的照顾！每天都有详细的日报和照片，小白回来状态很好，下次出差还找你！\"}"
+            }
+          }
+        },
+        {
+          "name": "5.5 更新评价",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/fosterreviews/{{reviewId}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"非常感谢邻居的照顾！每天都有详细的日报和照片，小白回来状态很好，强烈推荐给各位宠物主人！五星好评！\"}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. 统计数据模块",
+      "item": [
+        {
+          "name": "6.1 获取平台总览统计",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stats/overview"
+          }
+        },
+        {
+          "name": "6.2 获取近30天趋势统计",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/stats/trend",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stats", "trend"]
+            }
+          }
+        },
+        {
+          "name": "6.3 获取指定日期范围趋势",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stats/trend?startDate=2026-06-01&endDate=2026-06-30"
+          }
+        }
+      ]
+    }
+  ]
+}
