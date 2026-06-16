@@ -90,4 +90,18 @@ public class EntityMapper {
                 .createdAt(formatDateTime(review.getCreatedAt()))
                 .build();
     }
+
+    public static NotificationDTO.NotificationResponse toNotificationResponse(Notification notification) {
+        return NotificationDTO.NotificationResponse.builder()
+                .id(notification.getId())
+                .userId(notification.getUserId())
+                .type(notification.getType())
+                .title(notification.getTitle())
+                .content(notification.getContent())
+                .relatedId(notification.getRelatedId())
+                .relatedType(notification.getRelatedType())
+                .isRead(notification.getIsRead())
+                .createdAt(formatDateTime(notification.getCreatedAt()))
+                .build();
+    }
 }

@@ -33,6 +33,7 @@ public class DailyLogService {
     private final FosterDailyLogRepository logRepository;
     private final FosterRequestRepository requestRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public PageResponse<DailyLogDTO.LogResponse> getLogs(
             int page, int size, String sort,
@@ -93,6 +94,18 @@ public class DailyLogService {
         log_info("寄养日报创建成功: logId={}, requestId={}", log.getId(), req.getRequestId());
 
         User fosterer = userRepository.findById(userId).orElse(null);
+        String fostererName = fosterer != null ? fosterer.getUsername() : "寄养人";
+
+        notificationService.sendNotification(
+                request.getOwnerId(),
+                com.petfoster.entity.Notification.Type.DAILY_LOG_CREATED,
+                "新的寄养日报已发布",
+                String.format("%s 发布了 %s 的寄养日报，请及时查看。",
+                        fostererName, req.getLogDate()),
+                log.getId(),
+                com.petfoster.entity.Notification.RelatedType.DAILY_LOG
+        );
+
         return EntityMapper.toDailyLogResponse(log, fosterer);
     }
 
@@ -141,7 +154,22 @@ public class DailyLogService {
         FosterDailyLog finalLog = log;
         log_info("寄养日报更新成功: logId={}", logId);
 
+        FosterRequest request = requestRepository.findById(log.getRequestId()).orElse(null);
         User fosterer = userRepository.findById(log.getFostererId()).orElse(null);
+        String fostererName = fosterer != null ? fosterer.getUsername() : "寄养人";
+
+        if (request != null) {
+            notificationService.sendNotification(
+                    request.getOwnerId(),
+                    com.petfoster.entity.Notification.Type.DAILY_LOG_UPDATED,
+                    "寄养日报已更新",
+                    String.format("%s 更新了 %s 的寄养日报，请及时查看。",
+                            fostererName, log.getLogDate()),
+                    log.getId(),
+                    com.petfoster.entity.Notification.RelatedType.DAILY_LOG
+            );
+        }
+
         return EntityMapper.toDailyLogResponse(log, fosterer);
     }
 

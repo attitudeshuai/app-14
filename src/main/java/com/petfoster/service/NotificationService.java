@@ -1,0 +1,112 @@
+package com.petfoster.service;
+
+import com.petfoster.common.BusinessException;
+import com.petfoster.common.PageResponse;
+import com.petfoster.dto.NotificationDTO;
+import com.petfoster.entity.Notification;
+import com.petfoster.repository.NotificationRepository;
+import com.petfoster.util.EntityMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.util.List;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class NotificationService {
+
+    private final NotificationRepository notificationRepository;
+
+    @Transactional
+    public void sendNotification(Long userId, Notification.Type type, String title, String content,
+                                  Long relatedId, Notification.RelatedType relatedType) {
+        Notification notification = Notification.builder()
+                .userId(userId)
+                .type(type)
+                .title(title)
+                .content(content)
+                .relatedId(relatedId)
+                .relatedType(relatedType)
+                .isRead(false)
+                .build();
+        notificationRepository.save(notification);
+        log.info("站内消息发送成功: userId={}, type={}, title={}", userId, type, title);
+    }
+
+    public PageResponse<NotificationDTO.NotificationResponse> getMyNotifications(
+            Long userId, int page, int size, String sort, Boolean isRead) {
+
+        Sort sortObj = parseSort(sort);
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+
+        Page<Notification> notificationPage;
+        if (isRead != null) {
+            notificationPage = notificationRepository.findByUserIdAndIsRead(userId, isRead, pageable);
+        } else {
+            notificationPage = notificationRepository.findByUserId(userId, pageable);
+        }
+
+        List<NotificationDTO.NotificationResponse> content = notificationPage.getContent().stream()
+                .map(EntityMapper::toNotificationResponse)
+                .toList();
+
+        return PageResponse.<NotificationDTO.NotificationResponse>builder()
+                .content(content)
+                .pageNumber(notificationPage.getNumber())
+                .pageSize(notificationPage.getSize())
+                .totalElements(notificationPage.getTotalElements())
+                .totalPages(notificationPage.getTotalPages())
+                .first(notificationPage.isFirst())
+                .last(notificationPage.isLast())
+                .build();
+    }
+
+    public NotificationDTO.UnreadCountResponse getUnreadCount(Long userId) {
+        long count = notificationRepository.countByUserIdAndIsRead(userId, false);
+        return NotificationDTO.UnreadCountResponse.builder().count(count).build();
+    }
+
+    @Transactional
+    public void markAsRead(Long userId, Long notificationId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> BusinessException.notFound("消息不存在"));
+        if (!notification.getUserId().equals(userId)) {
+            throw BusinessException.forbidden("无权限操作此消息");
+        }
+        if (notification.getIsRead()) {
+            return;
+        }
+        notificationRepository.markAsRead(userId, notificationId);
+        log.info("消息已标记为已读: notificationId={}, userId={}", notificationId, userId);
+    }
+
+    @Transactional
+    public void markAllAsRead(Long userId) {
+        notificationRepository.markAllAsRead(userId);
+        log.info("所有消息已标记为已读: userId={}", userId);
+    }
+
+    private Sort parseSort(String sort) {
+        if (!StringUtils.hasText(sort)) {
+            return Sort.by(Sort.Direction.DESC, "createdAt");
+        }
+        String[] parts = sort.split(",");
+        String field = parts[0];
+        Sort.Direction direction = parts.length > 1 && "asc".equalsIgnoreCase(parts[1])
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        return switch (field) {
+            case "createdAt", "created_at" -> Sort.by(direction, "createdAt");
+            case "isRead", "is_read" -> Sort.by(direction, "isRead");
+            default -> Sort.by(Sort.Direction.DESC, "createdAt");
+        };
+    }
+}

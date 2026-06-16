@@ -35,6 +35,7 @@ public class FosterRequestService {
     private final FosterRequestRepository requestRepository;
     private final PetRepository petRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     private static final Set<FosterRequest.Status> ALLOWED_FROM_PENDING = Set.of(
             FosterRequest.Status.Approved, FosterRequest.Status.Cancelled);
@@ -108,6 +109,21 @@ public class FosterRequestService {
         request = requestRepository.save(request);
         log.info("寄养申请创建成功: requestId={}, ownerId={}", request.getId(), userId);
 
+        if (req.getFostererId() != null) {
+            String petName = pet.getName();
+            User owner = userRepository.findById(userId).orElse(null);
+            String ownerName = owner != null ? owner.getUsername() : "某位主人";
+            notificationService.sendNotification(
+                    req.getFostererId(),
+                    com.petfoster.entity.Notification.Type.FOSTER_REQUEST_CREATED,
+                    "收到新的寄养申请",
+                    String.format("%s 邀请您帮忙寄养宠物「%s」，寄养时间：%s 至 %s",
+                            ownerName, petName, req.getStartDate(), req.getEndDate()),
+                    request.getId(),
+                    com.petfoster.entity.Notification.RelatedType.FOSTER_REQUEST
+            );
+        }
+
         return buildSingleResponse(request);
     }
 
@@ -167,10 +183,42 @@ public class FosterRequestService {
 
         validateStatusTransition(request.getStatus(), newStatus);
 
+        FosterRequest.Status oldStatus = request.getStatus();
         request.setStatus(newStatus);
         request = requestRepository.save(request);
         log.info("寄养申请状态变更: requestId={}, 旧状态={}, 新状态={}",
-                requestId, request.getStatus(), newStatus);
+                requestId, oldStatus, newStatus);
+
+        Pet pet = petRepository.findById(request.getPetId()).orElse(null);
+        String petName = pet != null ? pet.getName() : "宠物";
+        User operator = userRepository.findById(userId).orElse(null);
+        String operatorName = operator != null ? operator.getUsername() : "某人";
+
+        String statusText = getStatusText(newStatus);
+        String title = String.format("寄养申请状态变更：%s", statusText);
+        String content = String.format("%s 将宠物「%s」的寄养申请状态更新为「%s」",
+                operatorName, petName, statusText);
+
+        if (!request.getOwnerId().equals(userId)) {
+            notificationService.sendNotification(
+                    request.getOwnerId(),
+                    com.petfoster.entity.Notification.Type.FOSTER_REQUEST_STATUS,
+                    title,
+                    content,
+                    request.getId(),
+                    com.petfoster.entity.Notification.RelatedType.FOSTER_REQUEST
+            );
+        }
+        if (request.getFostererId() != null && !request.getFostererId().equals(userId)) {
+            notificationService.sendNotification(
+                    request.getFostererId(),
+                    com.petfoster.entity.Notification.Type.FOSTER_REQUEST_STATUS,
+                    title,
+                    content,
+                    request.getId(),
+                    com.petfoster.entity.Notification.RelatedType.FOSTER_REQUEST
+            );
+        }
 
         return buildSingleResponse(request);
     }
@@ -190,6 +238,16 @@ public class FosterRequestService {
 
         requestRepository.delete(request);
         log.info("寄养申请删除成功: requestId={}, userId={}", requestId, userId);
+    }
+
+    private String getStatusText(FosterRequest.Status status) {
+        return switch (status) {
+            case Pending -> "待确认";
+            case Approved -> "已同意";
+            case InProgress -> "进行中";
+            case Completed -> "已完成";
+            case Cancelled -> "已取消";
+        };
     }
 
     private void validateStatusTransition(FosterRequest.Status current, FosterRequest.Status next) {
