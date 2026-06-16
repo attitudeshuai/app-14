@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -61,71 +62,11 @@ public class DailyLogService {
 
     @Transactional
     public DailyLogDTO.LogResponse createLog(Long userId, DailyLogDTO.CreateLogRequest req) {
-        FosterRequest request = requestRepository.findById(req.getRequestId())
-                .orElseThrow(() -> BusinessException.notFound("寄养申请不存在"));
-
-        if (request.getStatus() != FosterRequest.Status.InProgress
-                && request.getStatus() != FosterRequest.Status.Approved) {
-            throw BusinessException.badRequest("只有已批准或进行中的寄养申请才能创建日报");
-        }
-
-        boolean isFosterer = request.getFostererId() != null
-                && request.getFostererId().equals(userId);
-        if (!isFosterer) {
-            throw BusinessException.forbidden("只有寄养人才能创建日报");
-        }
-
-        if (req.getLogDate().isBefore(request.getStartDate())
-                || req.getLogDate().isAfter(request.getEndDate())) {
-            throw BusinessException.badRequest("日志日期必须在寄养期间内");
-        }
-
-        if (logRepository.existsByRequestIdAndLogDate(req.getRequestId(), req.getLogDate())) {
-            throw BusinessException.badRequest("该日期的日报已存在，请使用更新接口");
-        }
-
-        FosterDailyLog log = FosterDailyLog.builder()
-                .requestId(req.getRequestId())
-                .fostererId(userId)
-                .logDate(req.getLogDate())
-                .food(req.getFood())
-                .mood(req.getMood())
-                .photos(req.getPhotos())
-                .note(req.getNote())
-                .build();
-
-        log = logRepository.save(log);
-        log_info("寄养日报创建成功: logId={}, requestId={}", log.getId(), req.getRequestId());
-
-        User fosterer = userRepository.findById(userId).orElse(null);
-        String fostererName = fosterer != null ? fosterer.getUsername() : "寄养人";
-
-        List<NotificationEvent.NotificationEntry> entries = new java.util.ArrayList<>();
-        entries.add(NotificationEvent.entry(
-                request.getOwnerId(),
-                Notification.Type.DAILY_LOG_CREATED,
-                "新的寄养日报已发布",
-                String.format("%s 发布了 %s 的寄养日报，请及时查看。",
-                        fostererName, req.getLogDate()),
-                log.getId(),
-                Notification.RelatedType.DAILY_LOG
-        ));
-        entries.add(NotificationEvent.entry(
-                userId,
-                Notification.Type.DAILY_LOG_CREATED,
-                "寄养日报已发布",
-                String.format("您已发布 %s 的寄养日报，请持续记录宠物每日状况。",
-                        req.getLogDate()),
-                log.getId(),
-                Notification.RelatedType.DAILY_LOG
-        ));
-        eventPublisher.publishEvent(new NotificationEvent(entries));
-
-        return EntityMapper.toDailyLogResponse(log, fosterer);
+        return createLog(userId, req, null);
     }
 
     @Transactional
-    public DailyLogDTO.LogResponse createLogWithPhotos(Long userId, DailyLogDTO.CreateLogRequest req, org.springframework.web.multipart.MultipartFile[] photoFiles) {
+    public DailyLogDTO.LogResponse createLog(Long userId, DailyLogDTO.CreateLogRequest req, org.springframework.web.multipart.MultipartFile[] photoFiles) {
         FosterRequest request = requestRepository.findById(req.getRequestId())
                 .orElseThrow(() -> BusinessException.notFound("寄养申请不存在"));
 
@@ -153,141 +94,92 @@ public class DailyLogService {
             throw BusinessException.badRequest("该日期的日报已存在，请使用更新接口");
         }
 
-        java.util.List<String> photoUrlList = new java.util.ArrayList<>();
-        if (StringUtils.hasText(req.getPhotos())) {
-            photoUrlList.addAll(java.util.Arrays.asList(req.getPhotos().split(",")));
-        }
+        List<String> uploadedPhotoUrls = new ArrayList<>();
+        List<String> photoUrlList = new ArrayList<>();
 
-        if (photoFiles != null && photoFiles.length > 0) {
-            for (org.springframework.web.multipart.MultipartFile photoFile : photoFiles) {
-                if (photoFile != null && !photoFile.isEmpty()) {
-                    String photoUrl = fileStorageService.uploadFile(photoFile);
-                    photoUrlList.add(photoUrl);
+        try {
+            if (StringUtils.hasText(req.getPhotos())) {
+                photoUrlList.addAll(List.of(req.getPhotos().split(",")));
+            }
+
+            if (photoFiles != null && photoFiles.length > 0) {
+                for (org.springframework.web.multipart.MultipartFile photoFile : photoFiles) {
+                    if (photoFile != null && !photoFile.isEmpty()) {
+                        String photoUrl = fileStorageService.uploadFile(photoFile);
+                        photoUrlList.add(photoUrl);
+                        uploadedPhotoUrls.add(photoUrl);
+                    }
                 }
+                log_info("日报照片上传完成: 共上传 {} 张照片", uploadedPhotoUrls.size());
             }
-            log.info("日报照片上传完成: 共上传 {} 张照片", photoFiles.length);
-        }
 
-        String photos = photoUrlList.isEmpty() ? null : String.join(",", photoUrlList);
+            String photos = photoUrlList.isEmpty() ? null : String.join(",", photoUrlList);
 
-        FosterDailyLog log = FosterDailyLog.builder()
-                .requestId(req.getRequestId())
-                .fostererId(userId)
-                .logDate(req.getLogDate())
-                .food(req.getFood())
-                .mood(req.getMood())
-                .photos(photos)
-                .note(req.getNote())
-                .build();
+            FosterDailyLog log = FosterDailyLog.builder()
+                    .requestId(req.getRequestId())
+                    .fostererId(userId)
+                    .logDate(req.getLogDate())
+                    .food(req.getFood())
+                    .mood(req.getMood())
+                    .photos(photos)
+                    .note(req.getNote())
+                    .build();
 
-        log = logRepository.save(log);
-        log_info("寄养日报创建成功(带照片): logId={}, requestId={}, photoCount={}", 
-            log.getId(), req.getRequestId(), photoUrlList.size());
+            log = logRepository.save(log);
+            log_info("寄养日报创建成功: logId={}, requestId={}, photoCount={}",
+                    log.getId(), req.getRequestId(), photoUrlList.size());
 
-        User fosterer = userRepository.findById(userId).orElse(null);
-        String fostererName = fosterer != null ? fosterer.getUsername() : "寄养人";
+            User fosterer = userRepository.findById(userId).orElse(null);
+            String fostererName = fosterer != null ? fosterer.getUsername() : "寄养人";
 
-        List<NotificationEvent.NotificationEntry> entries = new java.util.ArrayList<>();
-        entries.add(NotificationEvent.entry(
-                request.getOwnerId(),
-                Notification.Type.DAILY_LOG_CREATED,
-                "新的寄养日报已发布",
-                String.format("%s 发布了 %s 的寄养日报，请及时查看。",
-                        fostererName, req.getLogDate()),
-                log.getId(),
-                Notification.RelatedType.DAILY_LOG
-        ));
-        entries.add(NotificationEvent.entry(
-                userId,
-                Notification.Type.DAILY_LOG_CREATED,
-                "寄养日报已发布",
-                String.format("您已发布 %s 的寄养日报，请持续记录宠物每日状况。",
-                        req.getLogDate()),
-                log.getId(),
-                Notification.RelatedType.DAILY_LOG
-        ));
-        eventPublisher.publishEvent(new NotificationEvent(entries));
-
-        return EntityMapper.toDailyLogResponse(log, fosterer);
-    }
-
-    private void log_info(String msg, Object... args) {
-        // 避免变量名冲突
-        log.info(msg, args);
-    }
-
-    @Transactional
-    public DailyLogDTO.LogResponse updateLog(Long userId, Long logId, DailyLogDTO.UpdateLogRequest req) {
-        FosterDailyLog log = logRepository.findById(logId)
-                .orElseThrow(() -> BusinessException.notFound("寄养日报不存在"));
-
-        if (!log.getFostererId().equals(userId)) {
-            throw BusinessException.forbidden("无权限修改此日报");
-        }
-
-        if (req.getLogDate() != null) {
-            FosterRequest request = requestRepository.findById(log.getRequestId())
-                    .orElseThrow(() -> BusinessException.notFound("寄养申请不存在"));
-            if (req.getLogDate().isBefore(request.getStartDate())
-                    || req.getLogDate().isAfter(request.getEndDate())) {
-                throw BusinessException.badRequest("日志日期必须在寄养期间内");
-            }
-            if (!req.getLogDate().equals(log.getLogDate())
-                    && logRepository.existsByRequestIdAndLogDate(log.getRequestId(), req.getLogDate())) {
-                throw BusinessException.badRequest("该日期的日报已存在");
-            }
-            log.setLogDate(req.getLogDate());
-        }
-
-        if (req.getFood() != null) {
-            log.setFood(req.getFood());
-        }
-        if (req.getMood() != null) {
-            log.setMood(req.getMood());
-        }
-        if (req.getPhotos() != null) {
-            log.setPhotos(req.getPhotos());
-        }
-        if (req.getNote() != null) {
-            log.setNote(req.getNote());
-        }
-
-        log = logRepository.save(log);
-        FosterDailyLog finalLog = log;
-        log_info("寄养日报更新成功: logId={}", logId);
-
-        FosterRequest request = requestRepository.findById(log.getRequestId()).orElse(null);
-        User fosterer = userRepository.findById(log.getFostererId()).orElse(null);
-        String fostererName = fosterer != null ? fosterer.getUsername() : "寄养人";
-
-        if (request != null) {
-            List<NotificationEvent.NotificationEntry> entries = new java.util.ArrayList<>();
+            List<NotificationEvent.NotificationEntry> entries = new ArrayList<>();
             entries.add(NotificationEvent.entry(
                     request.getOwnerId(),
-                    Notification.Type.DAILY_LOG_UPDATED,
-                    "寄养日报已更新",
-                    String.format("%s 更新了 %s 的寄养日报，请及时查看。",
-                            fostererName, log.getLogDate()),
+                    Notification.Type.DAILY_LOG_CREATED,
+                    "新的寄养日报已发布",
+                    String.format("%s 发布了 %s 的寄养日报，请及时查看。",
+                            fostererName, req.getLogDate()),
                     log.getId(),
                     Notification.RelatedType.DAILY_LOG
             ));
             entries.add(NotificationEvent.entry(
-                    log.getFostererId(),
-                    Notification.Type.DAILY_LOG_UPDATED,
-                    "寄养日报已更新",
-                    String.format("您已更新 %s 的寄养日报，请继续关注宠物状况并及时记录。",
-                            log.getLogDate()),
+                    userId,
+                    Notification.Type.DAILY_LOG_CREATED,
+                    "寄养日报已发布",
+                    String.format("您已发布 %s 的寄养日报，请持续记录宠物每日状况。",
+                            req.getLogDate()),
                     log.getId(),
                     Notification.RelatedType.DAILY_LOG
             ));
             eventPublisher.publishEvent(new NotificationEvent(entries));
-        }
 
-        return EntityMapper.toDailyLogResponse(log, fosterer);
+            return EntityMapper.toDailyLogResponse(log, fosterer);
+        } catch (Exception e) {
+            if (!uploadedPhotoUrls.isEmpty()) {
+                for (String photoUrl : uploadedPhotoUrls) {
+                    fileStorageService.deleteFile(photoUrl);
+                }
+                log_warn("数据库操作失败，已清理 {} 个孤儿文件", uploadedPhotoUrls.size());
+            }
+            throw e;
+        }
+    }
+
+    private void log_info(String msg, Object... args) {
+        log.info(msg, args);
+    }
+
+    private void log_warn(String msg, Object... args) {
+        log.warn(msg, args);
     }
 
     @Transactional
-    public DailyLogDTO.LogResponse updateLogWithPhotos(Long userId, Long logId, DailyLogDTO.UpdateLogRequest req, 
+    public DailyLogDTO.LogResponse updateLog(Long userId, Long logId, DailyLogDTO.UpdateLogRequest req) {
+        return updateLog(userId, logId, req, null, false);
+    }
+
+    @Transactional
+    public DailyLogDTO.LogResponse updateLog(Long userId, Long logId, DailyLogDTO.UpdateLogRequest req,
             org.springframework.web.multipart.MultipartFile[] photoFiles, boolean replacePhotos) {
         FosterDailyLog log = logRepository.findById(logId)
                 .orElseThrow(() -> BusinessException.notFound("寄养日报不存在"));
@@ -296,101 +188,114 @@ public class DailyLogService {
             throw BusinessException.forbidden("无权限修改此日报");
         }
 
-        if (req.getLogDate() != null) {
-            FosterRequest request = requestRepository.findById(log.getRequestId())
-                    .orElseThrow(() -> BusinessException.notFound("寄养申请不存在"));
-            if (req.getLogDate().isBefore(request.getStartDate())
-                    || req.getLogDate().isAfter(request.getEndDate())) {
-                throw BusinessException.badRequest("日志日期必须在寄养期间内");
-            }
-            if (!req.getLogDate().equals(log.getLogDate())
-                    && logRepository.existsByRequestIdAndLogDate(log.getRequestId(), req.getLogDate())) {
-                throw BusinessException.badRequest("该日期的日报已存在");
-            }
-            log.setLogDate(req.getLogDate());
-        }
-
-        if (req.getFood() != null) {
-            log.setFood(req.getFood());
-        }
-        if (req.getMood() != null) {
-            log.setMood(req.getMood());
-        }
-        if (req.getNote() != null) {
-            log.setNote(req.getNote());
-        }
-
-        java.util.List<String> photoUrlList = new java.util.ArrayList<>();
-        
-        if (!replacePhotos && StringUtils.hasText(log.getPhotos())) {
-            photoUrlList.addAll(java.util.Arrays.asList(log.getPhotos().split(",")));
-        }
-
-        if (req.getPhotos() != null) {
-            if (replacePhotos || !StringUtils.hasText(log.getPhotos())) {
-                if (StringUtils.hasText(req.getPhotos())) {
-                    photoUrlList.addAll(java.util.Arrays.asList(req.getPhotos().split(",")));
-                }
-            } else {
-                if (StringUtils.hasText(req.getPhotos())) {
-                    photoUrlList.addAll(java.util.Arrays.asList(req.getPhotos().split(",")));
-                }
-            }
-        }
-
-        if (photoFiles != null && photoFiles.length > 0) {
-            for (org.springframework.web.multipart.MultipartFile photoFile : photoFiles) {
-                if (photoFile != null && !photoFile.isEmpty()) {
-                    String photoUrl = fileStorageService.uploadFile(photoFile);
-                    photoUrlList.add(photoUrl);
-                }
-            }
-            log_info("日报照片上传完成: 共上传 {} 张新照片", photoFiles.length);
-        }
-
         String oldPhotos = log.getPhotos();
-        String newPhotos = photoUrlList.isEmpty() ? null : String.join(",", photoUrlList);
-        log.setPhotos(newPhotos);
+        List<String> uploadedPhotoUrls = new ArrayList<>();
 
-        if (replacePhotos && StringUtils.hasText(oldPhotos)) {
-            for (String oldPhotoUrl : oldPhotos.split(",")) {
-                if (StringUtils.hasText(oldPhotoUrl) && oldPhotoUrl.startsWith("/uploads/")) {
-                    fileStorageService.deleteFile(oldPhotoUrl.trim());
+        try {
+            if (req.getLogDate() != null) {
+                FosterRequest request = requestRepository.findById(log.getRequestId())
+                        .orElseThrow(() -> BusinessException.notFound("寄养申请不存在"));
+                if (req.getLogDate().isBefore(request.getStartDate())
+                        || req.getLogDate().isAfter(request.getEndDate())) {
+                    throw BusinessException.badRequest("日志日期必须在寄养期间内");
+                }
+                if (!req.getLogDate().equals(log.getLogDate())
+                        && logRepository.existsByRequestIdAndLogDate(log.getRequestId(), req.getLogDate())) {
+                    throw BusinessException.badRequest("该日期的日报已存在");
+                }
+                log.setLogDate(req.getLogDate());
+            }
+
+            if (req.getFood() != null) {
+                log.setFood(req.getFood());
+            }
+            if (req.getMood() != null) {
+                log.setMood(req.getMood());
+            }
+            if (req.getNote() != null) {
+                log.setNote(req.getNote());
+            }
+
+            List<String> photoUrlList = new ArrayList<>();
+
+            if (!replacePhotos && StringUtils.hasText(oldPhotos)) {
+                photoUrlList.addAll(List.of(oldPhotos.split(",")));
+            }
+
+            if (req.getPhotos() != null) {
+                if (replacePhotos || !StringUtils.hasText(oldPhotos)) {
+                    if (StringUtils.hasText(req.getPhotos())) {
+                        photoUrlList.addAll(List.of(req.getPhotos().split(",")));
+                    }
+                } else {
+                    if (StringUtils.hasText(req.getPhotos())) {
+                        photoUrlList.addAll(List.of(req.getPhotos().split(",")));
+                    }
                 }
             }
+
+            if (photoFiles != null && photoFiles.length > 0) {
+                for (org.springframework.web.multipart.MultipartFile photoFile : photoFiles) {
+                    if (photoFile != null && !photoFile.isEmpty()) {
+                        String photoUrl = fileStorageService.uploadFile(photoFile);
+                        photoUrlList.add(photoUrl);
+                        uploadedPhotoUrls.add(photoUrl);
+                    }
+                }
+                log_info("日报照片上传完成: 共上传 {} 张新照片", uploadedPhotoUrls.size());
+            }
+
+            String newPhotos = photoUrlList.isEmpty() ? null : String.join(",", photoUrlList);
+            log.setPhotos(newPhotos);
+
+            if (replacePhotos && StringUtils.hasText(oldPhotos)) {
+                for (String oldPhotoUrl : oldPhotos.split(",")) {
+                    if (StringUtils.hasText(oldPhotoUrl) && oldPhotoUrl.startsWith("/uploads/")) {
+                        fileStorageService.deleteFile(oldPhotoUrl.trim());
+                    }
+                }
+            }
+
+            log = logRepository.save(log);
+            log_info("寄养日报更新成功: logId={}, photoCount={}", logId, photoUrlList.size());
+
+            FosterRequest request = requestRepository.findById(log.getRequestId()).orElse(null);
+            User fosterer = userRepository.findById(log.getFostererId()).orElse(null);
+            String fostererName = fosterer != null ? fosterer.getUsername() : "寄养人";
+
+            if (request != null) {
+                List<NotificationEvent.NotificationEntry> entries = new ArrayList<>();
+                entries.add(NotificationEvent.entry(
+                        request.getOwnerId(),
+                        Notification.Type.DAILY_LOG_UPDATED,
+                        "寄养日报已更新",
+                        String.format("%s 更新了 %s 的寄养日报，请及时查看。",
+                                fostererName, log.getLogDate()),
+                        log.getId(),
+                        Notification.RelatedType.DAILY_LOG
+                ));
+                entries.add(NotificationEvent.entry(
+                        log.getFostererId(),
+                        Notification.Type.DAILY_LOG_UPDATED,
+                        "寄养日报已更新",
+                        String.format("您已更新 %s 的寄养日报，请继续关注宠物状况并及时记录。",
+                                log.getLogDate()),
+                        log.getId(),
+                        Notification.RelatedType.DAILY_LOG
+                ));
+                eventPublisher.publishEvent(new NotificationEvent(entries));
+            }
+
+            return EntityMapper.toDailyLogResponse(log, fosterer);
+        } catch (Exception e) {
+            if (!uploadedPhotoUrls.isEmpty()) {
+                for (String photoUrl : uploadedPhotoUrls) {
+                    fileStorageService.deleteFile(photoUrl);
+                }
+                log_warn("数据库操作失败，已清理 {} 个孤儿文件", uploadedPhotoUrls.size());
+            }
+            throw e;
         }
-
-        log = logRepository.save(log);
-        log_info("寄养日报更新成功(带照片): logId={}, photoCount={}", logId, photoUrlList.size());
-
-        FosterRequest request = requestRepository.findById(log.getRequestId()).orElse(null);
-        User fosterer = userRepository.findById(log.getFostererId()).orElse(null);
-        String fostererName = fosterer != null ? fosterer.getUsername() : "寄养人";
-
-        if (request != null) {
-            List<NotificationEvent.NotificationEntry> entries = new java.util.ArrayList<>();
-            entries.add(NotificationEvent.entry(
-                    request.getOwnerId(),
-                    Notification.Type.DAILY_LOG_UPDATED,
-                    "寄养日报已更新",
-                    String.format("%s 更新了 %s 的寄养日报，请及时查看。",
-                            fostererName, log.getLogDate()),
-                    log.getId(),
-                    Notification.RelatedType.DAILY_LOG
-            ));
-            entries.add(NotificationEvent.entry(
-                    log.getFostererId(),
-                    Notification.Type.DAILY_LOG_UPDATED,
-                    "寄养日报已更新",
-                    String.format("您已更新 %s 的寄养日报，请继续关注宠物状况并及时记录。",
-                            log.getLogDate()),
-                    log.getId(),
-                    Notification.RelatedType.DAILY_LOG
-            ));
-            eventPublisher.publishEvent(new NotificationEvent(entries));
-        }
-
-        return EntityMapper.toDailyLogResponse(log, fosterer);
     }
 
     @Transactional
@@ -402,8 +307,19 @@ public class DailyLogService {
             throw BusinessException.forbidden("无权限删除此日报");
         }
 
+        String photos = log.getPhotos();
+
         logRepository.delete(log);
         log_info("寄养日报删除成功: logId={}, userId={}", logId, userId);
+
+        if (StringUtils.hasText(photos)) {
+            for (String photoUrl : photos.split(",")) {
+                if (StringUtils.hasText(photoUrl) && photoUrl.startsWith("/uploads/")) {
+                    fileStorageService.deleteFile(photoUrl.trim());
+                }
+            }
+            log_info("日报照片已清理: logId={}", logId);
+        }
     }
 
     private PageResponse<DailyLogDTO.LogResponse> buildPageResponse(Page<FosterDailyLog> page) {

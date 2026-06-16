@@ -45,65 +45,41 @@ public class DailyLogController {
         return ApiResponse.success(logService.getLogById(id));
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "创建寄养日报(JSON格式)", description = "需要JWT认证，仅寄养人可创建，使用JSON格式提交，photos为外部图片URL，多个用逗号分隔")
-    public ApiResponse<DailyLogDTO.LogResponse> createLog(
+    public ApiResponse<DailyLogDTO.LogResponse> createLogJson(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody DailyLogDTO.CreateLogRequest request) {
-        return ApiResponse.success("创建成功", logService.createLog(user.getId(), request));
+        return ApiResponse.success("创建成功", logService.createLog(user.getId(), request, null));
     }
 
-    @PostMapping(value = "/with-photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "创建寄养日报(带图片上传)", description = "需要JWT认证，仅寄养人可创建，支持直接上传多张本地图片，图片将自动保存并写入日报")
-    public ApiResponse<DailyLogDTO.LogResponse> createLogWithPhotos(
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "创建寄养日报(表单格式)", description = "需要JWT认证，仅寄养人可创建，支持直接上传多张本地图片，图片将自动保存并写入日报")
+    public ApiResponse<DailyLogDTO.LogResponse> createLogMultipart(
             @AuthenticationPrincipal User user,
-            @RequestParam(required = false) Long requestId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate logDate,
-            @RequestParam(required = false) String food,
-            @RequestParam(required = false) String mood,
-            @RequestParam(required = false) String photos,
-            @RequestParam(required = false) String note,
+            @Valid @ModelAttribute DailyLogDTO.CreateLogRequest request,
             @RequestPart(required = false) MultipartFile[] photoFiles) {
-        DailyLogDTO.CreateLogRequest request = DailyLogDTO.CreateLogRequest.builder()
-                .requestId(requestId)
-                .logDate(logDate)
-                .food(food)
-                .mood(mood)
-                .photos(photos)
-                .note(note)
-                .build();
-        return ApiResponse.success("创建成功", logService.createLogWithPhotos(user.getId(), request, photoFiles));
+        return ApiResponse.success("创建成功", logService.createLog(user.getId(), request, photoFiles));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "更新寄养日报(JSON格式)", description = "需要JWT认证，仅创建者可操作，使用JSON格式提交")
-    public ApiResponse<DailyLogDTO.LogResponse> updateLog(
+    public ApiResponse<DailyLogDTO.LogResponse> updateLogJson(
             @AuthenticationPrincipal User user,
             @PathVariable Long id,
             @RequestBody DailyLogDTO.UpdateLogRequest request) {
-        return ApiResponse.success("更新成功", logService.updateLog(user.getId(), id, request));
+        return ApiResponse.success("更新成功", logService.updateLog(user.getId(), id, request, null, false));
     }
 
-    @PutMapping(value = "/{id}/with-photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "更新寄养日报(带图片上传)", description = "需要JWT认证，仅创建者可操作，支持直接上传多张本地图片")
-    public ApiResponse<DailyLogDTO.LogResponse> updateLogWithPhotos(
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "更新寄养日报(表单格式)", description = "需要JWT认证，仅创建者可操作，支持直接上传多张本地图片")
+    public ApiResponse<DailyLogDTO.LogResponse> updateLogMultipart(
             @AuthenticationPrincipal User user,
             @PathVariable Long id,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate logDate,
-            @RequestParam(required = false) String food,
-            @RequestParam(required = false) String mood,
-            @RequestParam(required = false) String photos,
-            @RequestParam(required = false) String note,
+            @ModelAttribute DailyLogDTO.UpdateLogRequest request,
             @RequestPart(required = false) MultipartFile[] photoFiles,
             @RequestParam(defaultValue = "false") boolean replacePhotos) {
-        DailyLogDTO.UpdateLogRequest request = DailyLogDTO.UpdateLogRequest.builder()
-                .logDate(logDate)
-                .food(food)
-                .mood(mood)
-                .photos(photos)
-                .note(note)
-                .build();
-        return ApiResponse.success("更新成功", logService.updateLogWithPhotos(user.getId(), id, request, photoFiles, replacePhotos));
+        return ApiResponse.success("更新成功", logService.updateLog(user.getId(), id, request, photoFiles, replacePhotos));
     }
 
     @DeleteMapping("/{id}")

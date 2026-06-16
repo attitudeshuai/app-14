@@ -97,97 +97,56 @@ public class PetService {
 
     @Transactional
     public PetDTO.PetResponse createPet(Long userId, PetDTO.CreatePetRequest request) {
-        userRepository.findById(userId)
-                .orElseThrow(() -> BusinessException.notFound("用户不存在"));
-
-        Pet pet = Pet.builder()
-                .ownerId(userId)
-                .name(request.getName())
-                .species(request.getSpecies())
-                .breed(request.getBreed())
-                .age(request.getAge())
-                .dietNotes(request.getDietNotes())
-                .medicalNotes(request.getMedicalNotes())
-                .photoUrl(request.getPhotoUrl())
-                .build();
-
-        pet = petRepository.save(pet);
-        log.info("宠物创建成功: petId={}, ownerId={}", pet.getId(), userId);
-
-        User owner = userRepository.findById(userId).orElse(null);
-        return EntityMapper.toPetResponse(pet, owner);
+        return createPet(userId, request, null);
     }
 
     @Transactional
-    public PetDTO.PetResponse createPetWithPhoto(Long userId, PetDTO.CreatePetRequest request, org.springframework.web.multipart.MultipartFile photo) {
+    public PetDTO.PetResponse createPet(Long userId, PetDTO.CreatePetRequest request, org.springframework.web.multipart.MultipartFile photo) {
         userRepository.findById(userId)
                 .orElseThrow(() -> BusinessException.notFound("用户不存在"));
 
-        String photoUrl = request.getPhotoUrl();
+        String uploadedPhotoUrl = null;
+        String finalPhotoUrl = request.getPhotoUrl();
 
-        if (photo != null && !photo.isEmpty()) {
-            photoUrl = fileStorageService.uploadFile(photo);
-            log.info("宠物照片上传成功: {}", photoUrl);
+        try {
+            if (photo != null && !photo.isEmpty()) {
+                uploadedPhotoUrl = fileStorageService.uploadFile(photo);
+                finalPhotoUrl = uploadedPhotoUrl;
+                log.info("宠物照片上传成功: {}", uploadedPhotoUrl);
+            }
+
+            Pet pet = Pet.builder()
+                    .ownerId(userId)
+                    .name(request.getName())
+                    .species(request.getSpecies())
+                    .breed(request.getBreed())
+                    .age(request.getAge())
+                    .dietNotes(request.getDietNotes())
+                    .medicalNotes(request.getMedicalNotes())
+                    .photoUrl(finalPhotoUrl)
+                    .build();
+
+            pet = petRepository.save(pet);
+            log.info("宠物创建成功: petId={}, ownerId={}, photoUrl={}", pet.getId(), userId, finalPhotoUrl);
+
+            User owner = userRepository.findById(userId).orElse(null);
+            return EntityMapper.toPetResponse(pet, owner);
+        } catch (Exception e) {
+            if (uploadedPhotoUrl != null) {
+                fileStorageService.deleteFile(uploadedPhotoUrl);
+                log.warn("数据库操作失败，已清理孤儿文件: {}", uploadedPhotoUrl);
+            }
+            throw e;
         }
-
-        Pet pet = Pet.builder()
-                .ownerId(userId)
-                .name(request.getName())
-                .species(request.getSpecies())
-                .breed(request.getBreed())
-                .age(request.getAge())
-                .dietNotes(request.getDietNotes())
-                .medicalNotes(request.getMedicalNotes())
-                .photoUrl(photoUrl)
-                .build();
-
-        pet = petRepository.save(pet);
-        log.info("宠物创建成功(带照片): petId={}, ownerId={}, photoUrl={}", pet.getId(), userId, photoUrl);
-
-        User owner = userRepository.findById(userId).orElse(null);
-        return EntityMapper.toPetResponse(pet, owner);
     }
 
     @Transactional
     public PetDTO.PetResponse updatePet(Long userId, Long petId, PetDTO.UpdatePetRequest request) {
-        Pet pet = petRepository.findById(petId)
-                .orElseThrow(() -> BusinessException.notFound("宠物不存在"));
-
-        if (!pet.getOwnerId().equals(userId)) {
-            throw BusinessException.forbidden("无权限修改此宠物信息");
-        }
-
-        if (StringUtils.hasText(request.getName())) {
-            pet.setName(request.getName());
-        }
-        if (StringUtils.hasText(request.getSpecies())) {
-            pet.setSpecies(request.getSpecies());
-        }
-        if (request.getBreed() != null) {
-            pet.setBreed(request.getBreed());
-        }
-        if (request.getAge() != null) {
-            pet.setAge(request.getAge());
-        }
-        if (request.getDietNotes() != null) {
-            pet.setDietNotes(request.getDietNotes());
-        }
-        if (request.getMedicalNotes() != null) {
-            pet.setMedicalNotes(request.getMedicalNotes());
-        }
-        if (request.getPhotoUrl() != null) {
-            pet.setPhotoUrl(request.getPhotoUrl());
-        }
-
-        pet = petRepository.save(pet);
-        log.info("宠物信息更新成功: petId={}", petId);
-
-        User owner = userRepository.findById(pet.getOwnerId()).orElse(null);
-        return EntityMapper.toPetResponse(pet, owner);
+        return updatePet(userId, petId, request, null);
     }
 
     @Transactional
-    public PetDTO.PetResponse updatePetWithPhoto(Long userId, Long petId, PetDTO.UpdatePetRequest request, org.springframework.web.multipart.MultipartFile photo) {
+    public PetDTO.PetResponse updatePet(Long userId, Long petId, PetDTO.UpdatePetRequest request, org.springframework.web.multipart.MultipartFile photo) {
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> BusinessException.notFound("宠物不存在"));
 
@@ -195,44 +154,55 @@ public class PetService {
             throw BusinessException.forbidden("无权限修改此宠物信息");
         }
 
-        if (StringUtils.hasText(request.getName())) {
-            pet.setName(request.getName());
-        }
-        if (StringUtils.hasText(request.getSpecies())) {
-            pet.setSpecies(request.getSpecies());
-        }
-        if (request.getBreed() != null) {
-            pet.setBreed(request.getBreed());
-        }
-        if (request.getAge() != null) {
-            pet.setAge(request.getAge());
-        }
-        if (request.getDietNotes() != null) {
-            pet.setDietNotes(request.getDietNotes());
-        }
-        if (request.getMedicalNotes() != null) {
-            pet.setMedicalNotes(request.getMedicalNotes());
-        }
-        if (request.getPhotoUrl() != null) {
-            pet.setPhotoUrl(request.getPhotoUrl());
-        }
+        String oldPhotoUrl = pet.getPhotoUrl();
+        String newUploadedPhotoUrl = null;
 
-        if (photo != null && !photo.isEmpty()) {
-            String oldPhotoUrl = pet.getPhotoUrl();
-            String newPhotoUrl = fileStorageService.uploadFile(photo);
-            pet.setPhotoUrl(newPhotoUrl);
-            log.info("宠物照片更新成功: petId={}, oldPhoto={}, newPhoto={}", petId, oldPhotoUrl, newPhotoUrl);
-
-            if (StringUtils.hasText(oldPhotoUrl) && oldPhotoUrl.startsWith("/uploads/")) {
-                fileStorageService.deleteFile(oldPhotoUrl);
+        try {
+            if (StringUtils.hasText(request.getName())) {
+                pet.setName(request.getName());
             }
+            if (StringUtils.hasText(request.getSpecies())) {
+                pet.setSpecies(request.getSpecies());
+            }
+            if (request.getBreed() != null) {
+                pet.setBreed(request.getBreed());
+            }
+            if (request.getAge() != null) {
+                pet.setAge(request.getAge());
+            }
+            if (request.getDietNotes() != null) {
+                pet.setDietNotes(request.getDietNotes());
+            }
+            if (request.getMedicalNotes() != null) {
+                pet.setMedicalNotes(request.getMedicalNotes());
+            }
+            if (request.getPhotoUrl() != null) {
+                pet.setPhotoUrl(request.getPhotoUrl());
+            }
+
+            if (photo != null && !photo.isEmpty()) {
+                newUploadedPhotoUrl = fileStorageService.uploadFile(photo);
+                pet.setPhotoUrl(newUploadedPhotoUrl);
+                log.info("宠物照片上传成功: petId={}, newPhoto={}", petId, newUploadedPhotoUrl);
+            }
+
+            pet = petRepository.save(pet);
+            log.info("宠物信息更新成功: petId={}", petId);
+
+            if (newUploadedPhotoUrl != null && StringUtils.hasText(oldPhotoUrl) && oldPhotoUrl.startsWith("/uploads/")) {
+                fileStorageService.deleteFile(oldPhotoUrl);
+                log.info("旧宠物照片已清理: petId={}, oldPhoto={}", petId, oldPhotoUrl);
+            }
+
+            User owner = userRepository.findById(pet.getOwnerId()).orElse(null);
+            return EntityMapper.toPetResponse(pet, owner);
+        } catch (Exception e) {
+            if (newUploadedPhotoUrl != null) {
+                fileStorageService.deleteFile(newUploadedPhotoUrl);
+                log.warn("数据库操作失败，已清理孤儿文件: {}", newUploadedPhotoUrl);
+            }
+            throw e;
         }
-
-        pet = petRepository.save(pet);
-        log.info("宠物信息更新成功(带照片): petId={}", petId);
-
-        User owner = userRepository.findById(pet.getOwnerId()).orElse(null);
-        return EntityMapper.toPetResponse(pet, owner);
     }
 
     @Transactional
@@ -244,8 +214,15 @@ public class PetService {
             throw BusinessException.forbidden("无权限删除此宠物");
         }
 
+        String photoUrl = pet.getPhotoUrl();
+
         petRepository.delete(pet);
         log.info("宠物删除成功: petId={}, userId={}", petId, userId);
+
+        if (StringUtils.hasText(photoUrl) && photoUrl.startsWith("/uploads/")) {
+            fileStorageService.deleteFile(photoUrl);
+            log.info("宠物照片已清理: petId={}, photoUrl={}", petId, photoUrl);
+        }
     }
 
     private Sort parseSort(String sort) {

@@ -50,70 +50,40 @@ public class PetController {
         return ApiResponse.success(petService.getPetById(id));
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "创建宠物(JSON格式)", description = "需要JWT认证，使用JSON格式提交数据，photoUrl为外部图片链接")
-    public ApiResponse<PetDTO.PetResponse> createPet(
+    public ApiResponse<PetDTO.PetResponse> createPetJson(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody PetDTO.CreatePetRequest request) {
-        return ApiResponse.success("创建成功", petService.createPet(user.getId(), request));
+        return ApiResponse.success("创建成功", petService.createPet(user.getId(), request, null));
     }
 
-    @PostMapping(value = "/with-photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "创建宠物(带图片上传)", description = "需要JWT认证，支持直接上传本地图片文件，图片将自动保存并写入宠物信息")
-    public ApiResponse<PetDTO.PetResponse> createPetWithPhoto(
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "创建宠物(表单格式)", description = "需要JWT认证，支持直接上传本地图片文件，图片将自动保存并写入宠物信息")
+    public ApiResponse<PetDTO.PetResponse> createPetMultipart(
             @AuthenticationPrincipal User user,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String species,
-            @RequestParam(required = false) String breed,
-            @RequestParam(required = false) Integer age,
-            @RequestParam(required = false) String dietNotes,
-            @RequestParam(required = false) String medicalNotes,
-            @RequestParam(required = false) String photoUrl,
+            @Valid @ModelAttribute PetDTO.CreatePetRequest request,
             @RequestPart(required = false) MultipartFile photo) {
-        PetDTO.CreatePetRequest request = PetDTO.CreatePetRequest.builder()
-                .name(name)
-                .species(species)
-                .breed(breed)
-                .age(age)
-                .dietNotes(dietNotes)
-                .medicalNotes(medicalNotes)
-                .photoUrl(photoUrl)
-                .build();
-        return ApiResponse.success("创建成功", petService.createPetWithPhoto(user.getId(), request, photo));
+        return ApiResponse.success("创建成功", petService.createPet(user.getId(), request, photo));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "更新宠物信息(JSON格式)", description = "需要JWT认证，仅所有者可操作，使用JSON格式提交")
-    public ApiResponse<PetDTO.PetResponse> updatePet(
+    public ApiResponse<PetDTO.PetResponse> updatePetJson(
             @AuthenticationPrincipal User user,
             @PathVariable Long id,
             @RequestBody PetDTO.UpdatePetRequest request) {
-        return ApiResponse.success("更新成功", petService.updatePet(user.getId(), id, request));
+        return ApiResponse.success("更新成功", petService.updatePet(user.getId(), id, request, null));
     }
 
-    @PutMapping(value = "/{id}/with-photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "更新宠物信息(带图片上传)", description = "需要JWT认证，仅所有者可操作，支持直接上传本地图片文件")
-    public ApiResponse<PetDTO.PetResponse> updatePetWithPhoto(
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "更新宠物信息(表单格式)", description = "需要JWT认证，仅所有者可操作，支持直接上传本地图片文件")
+    public ApiResponse<PetDTO.PetResponse> updatePetMultipart(
             @AuthenticationPrincipal User user,
             @PathVariable Long id,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String species,
-            @RequestParam(required = false) String breed,
-            @RequestParam(required = false) Integer age,
-            @RequestParam(required = false) String dietNotes,
-            @RequestParam(required = false) String medicalNotes,
-            @RequestParam(required = false) String photoUrl,
+            @ModelAttribute PetDTO.UpdatePetRequest request,
             @RequestPart(required = false) MultipartFile photo) {
-        PetDTO.UpdatePetRequest request = PetDTO.UpdatePetRequest.builder()
-                .name(name)
-                .species(species)
-                .breed(breed)
-                .age(age)
-                .dietNotes(dietNotes)
-                .medicalNotes(medicalNotes)
-                .photoUrl(photoUrl)
-                .build();
-        return ApiResponse.success("更新成功", petService.updatePetWithPhoto(user.getId(), id, request, photo));
+        return ApiResponse.success("更新成功", petService.updatePet(user.getId(), id, request, photo));
     }
 
     @DeleteMapping("/{id}")

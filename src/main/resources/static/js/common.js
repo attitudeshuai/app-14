@@ -103,7 +103,7 @@ async function createPetWithPhoto(formData) {
         headers['Authorization'] = 'Bearer ' + authToken;
     }
     
-    const response = await fetch(API_BASE + '/api/pets/with-photo', {
+    const response = await fetch(API_BASE + '/api/pets', {
         method: 'POST',
         headers: headers,
         body: formData
@@ -128,7 +128,7 @@ async function createDailyLogWithPhotos(formData) {
         headers['Authorization'] = 'Bearer ' + authToken;
     }
     
-    const response = await fetch(API_BASE + '/api/fosterdailylogs/with-photos', {
+    const response = await fetch(API_BASE + '/api/fosterdailylogs', {
         method: 'POST',
         headers: headers,
         body: formData
