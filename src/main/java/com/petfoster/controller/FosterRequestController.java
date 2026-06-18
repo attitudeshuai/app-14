@@ -51,6 +51,13 @@ public class FosterRequestController {
         return ApiResponse.success(requestService.getRequestById(id));
     }
 
+    @PostMapping("/check-conflict")
+    @Operation(summary = "预约冲突检测", description = "检测指定宠物在指定时间段是否已有寄养申请冲突")
+    public ApiResponse<FosterRequestDTO.CheckConflictResponse> checkConflict(
+            @Valid @RequestBody FosterRequestDTO.CheckConflictRequest request) {
+        return ApiResponse.success(requestService.checkConflict(request));
+    }
+
     @PostMapping
     @Operation(summary = "创建寄养申请", description = "需要JWT认证，仅宠物主人可创建")
     public ApiResponse<FosterRequestDTO.RequestResponse> createRequest(

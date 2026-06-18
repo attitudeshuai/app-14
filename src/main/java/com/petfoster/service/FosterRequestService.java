@@ -76,6 +76,57 @@ public class FosterRequestService {
         return buildPageResponse(requestPage);
     }
 
+    public FosterRequestDTO.CheckConflictResponse checkConflict(FosterRequestDTO.CheckConflictRequest req) {
+        if (req.getStartDate().isAfter(req.getEndDate())) {
+            throw BusinessException.badRequest("开始日期不能晚于结束日期");
+        }
+
+        List<FosterRequest> conflicts = requestRepository.findConflictingRequests(
+                req.getPetId(), req.getStartDate(), req.getEndDate(), req.getExcludeRequestId());
+
+        List<FosterRequestDTO.ConflictInfo> conflictInfos = conflicts.stream()
+                .map(r -> {
+                    String fostererName = null;
+                    if (r.getFostererId() != null) {
+                        User fosterer = userRepository.findById(r.getFostererId()).orElse(null);
+                        if (fosterer != null) {
+                            fostererName = fosterer.getUsername();
+                        }
+                    }
+                    return FosterRequestDTO.ConflictInfo.builder()
+                            .requestId(r.getId())
+                            .startDate(r.getStartDate())
+                            .endDate(r.getEndDate())
+                            .status(r.getStatus())
+                            .fostererId(r.getFostererId())
+                            .fostererUsername(fostererName)
+                            .build();
+                })
+                .toList();
+
+        return FosterRequestDTO.CheckConflictResponse.builder()
+                .hasConflict(!conflictInfos.isEmpty())
+                .conflicts(conflictInfos)
+                .build();
+    }
+
+    private void validateNoConflict(Long petId, LocalDate startDate, LocalDate endDate, Long excludeRequestId) {
+        FosterRequestDTO.CheckConflictRequest checkReq = new FosterRequestDTO.CheckConflictRequest();
+        checkReq.setPetId(petId);
+        checkReq.setStartDate(startDate);
+        checkReq.setEndDate(endDate);
+        checkReq.setExcludeRequestId(excludeRequestId);
+
+        FosterRequestDTO.CheckConflictResponse conflictResp = checkConflict(checkReq);
+        if (conflictResp.isHasConflict()) {
+            FosterRequestDTO.ConflictInfo firstConflict = conflictResp.getConflicts().get(0);
+            throw BusinessException.badRequest(String.format(
+                    "该宠物在 %s 至 %s 期间已有寄养申请（状态：%s），时间段存在冲突",
+                    firstConflict.getStartDate(), firstConflict.getEndDate(),
+                    getStatusText(firstConflict.getStatus())));
+        }
+    }
+
     @Transactional
     public FosterRequestDTO.RequestResponse createRequest(Long userId, FosterRequestDTO.CreateRequest req) {
         Pet pet = petRepository.findById(req.getPetId())
@@ -95,6 +146,8 @@ public class FosterRequestService {
         if (req.getFostererId() != null && req.getFostererId().equals(userId)) {
             throw BusinessException.badRequest("不能寄养自己的宠物");
         }
+
+        validateNoConflict(req.getPetId(), req.getStartDate(), req.getEndDate(), null);
 
         FosterRequest.Status initialStatus = req.getFostererId() != null
                 ? FosterRequest.Status.Pending : FosterRequest.Status.Pending;
@@ -154,6 +207,9 @@ public class FosterRequestService {
             }
             request.setFostererId(req.getFostererId());
         }
+        LocalDate newStartDate = req.getStartDate() != null ? req.getStartDate() : request.getStartDate();
+        LocalDate newEndDate = req.getEndDate() != null ? req.getEndDate() : request.getEndDate();
+
         if (req.getStartDate() != null) {
             request.setStartDate(req.getStartDate());
         }
@@ -163,6 +219,11 @@ public class FosterRequestService {
         if (request.getStartDate().isAfter(request.getEndDate())) {
             throw BusinessException.badRequest("开始日期不能晚于结束日期");
         }
+
+        if (req.getStartDate() != null || req.getEndDate() != null) {
+            validateNoConflict(request.getPetId(), newStartDate, newEndDate, requestId);
+        }
+
         if (req.getDailyCareNotes() != null) {
             request.setDailyCareNotes(req.getDailyCareNotes());
         }

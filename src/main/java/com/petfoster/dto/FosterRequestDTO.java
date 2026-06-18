@@ -8,8 +8,45 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public class FosterRequestDTO {
+
+    @Data
+    public static class CheckConflictRequest {
+        @NotNull(message = "宠物ID不能为空")
+        private Long petId;
+
+        @NotNull(message = "开始日期不能为空")
+        private LocalDate startDate;
+
+        @NotNull(message = "结束日期不能为空")
+        private LocalDate endDate;
+
+        private Long excludeRequestId;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ConflictInfo {
+        private Long requestId;
+        private LocalDate startDate;
+        private LocalDate endDate;
+        private FosterRequest.Status status;
+        private Long fostererId;
+        private String fostererUsername;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CheckConflictResponse {
+        private boolean hasConflict;
+        private List<ConflictInfo> conflicts;
+    }
 
     @Data
     public static class CreateRequest {

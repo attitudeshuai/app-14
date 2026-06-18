@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -38,4 +39,16 @@ public interface FosterRequestRepository extends JpaRepository<FosterRequest, Lo
 
     @Query("SELECT COUNT(r) FROM FosterRequest r WHERE r.ownerId = :userId OR r.fostererId = :userId")
     long countByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT r FROM FosterRequest r WHERE r.petId = :petId " +
+           "AND r.status IN (com.petfoster.entity.FosterRequest$Status.Pending, " +
+           "com.petfoster.entity.FosterRequest$Status.Approved, " +
+           "com.petfoster.entity.FosterRequest$Status.InProgress) " +
+           "AND r.startDate <= :endDate AND r.endDate >= :startDate " +
+           "AND (:excludeId IS NULL OR r.id != :excludeId)")
+    List<FosterRequest> findConflictingRequests(
+            @Param("petId") Long petId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("excludeId") Long excludeId);
 }
