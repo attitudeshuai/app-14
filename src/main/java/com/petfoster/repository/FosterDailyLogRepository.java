@@ -31,13 +31,5 @@ public interface FosterDailyLogRepository extends JpaRepository<FosterDailyLog, 
 
     boolean existsByRequestIdAndLogDate(Long requestId, LocalDate logDate);
 
-    List<FosterDailyLog> findByRequestIdAndLogDateBetween(Long requestId, LocalDate startDate, LocalDate endDate);
-
     long countByRequestIdAndLogDateBetween(Long requestId, LocalDate startDate, LocalDate endDate);
-
-    @Query("SELECT l.logDate FROM FosterDailyLog l WHERE l.requestId = :requestId AND l.logDate BETWEEN :startDate AND :endDate")
-    List<LocalDate> findLogDatesByRequestIdAndDateRange(
-            @Param("requestId") Long requestId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
 }

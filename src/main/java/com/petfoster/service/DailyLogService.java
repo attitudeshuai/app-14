@@ -408,7 +408,7 @@ public class DailyLogService {
     public int sendMissedDailyLogReminders(int missedDays) {
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.minusDays(missedDays - 1);
-        List<FosterRequest> inProgressRequests = requestRepository.findAllInProgressWithFosterer();
+        List<FosterRequest> inProgressRequests = requestRepository.findInProgressOnDate(today);
 
         if (inProgressRequests.isEmpty()) {
             log.info("无进行中的寄养申请，跳过连续未写日报提醒");
