@@ -67,6 +67,7 @@ public class SecurityConfig {
                                 "/api/fosterrequests/**",
                                 "/api/fosterdailylogs/**",
                                 "/api/fosterreviews/**",
+                                "/api/reputation/**",
                                 "/api/stats/overview",
                                 "/api/stats/trend",
                                 "/api/stats/popular-breeds",

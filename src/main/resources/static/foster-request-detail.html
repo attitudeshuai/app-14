@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>申请详情 - PetFoster</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .back-btn {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+        
+        .detail-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 24px;
+        }
+        
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .detail-header h1 {
+            color: #333;
+            font-size: 28px;
+        }
+        
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .status-Pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-Approved {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .status-InProgress {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-Completed {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+        
+        .status-Cancelled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .section-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 10px;
+        }
+        
+        .info-label {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        
+        .info-value {
+            color: #333;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        .reputation-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        
+        .reputation-card {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8f5e9 100%);
+            border-radius: 14px;
+            padding: 24px;
+        }
+        
+        .reputation-card.owner {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        }
+        
+        .reputation-card.fosterer {
+            background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);
+        }
+        
+        .reputation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .reputation-role {
+            color: #666;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .reputation-username {
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .reputation-score-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            position: relative;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .score-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .score-label {
+            font-size: 10px;
+            color: #888;
+            margin-top: -4px;
+        }
+        
+        .level-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        
+        .level-优秀 {
+            background: #10b981;
+            color: white;
+        }
+        
+        .level-良好 {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .level-中等 {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .level-较差 {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .level-很差 {
+            background: #7f1d1d;
+            color: white;
+        }
+        
+        .reputation-details {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .reputation-detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+        }
+        
+        .detail-name {
+            color: #666;
+        }
+        
+        .detail-value {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .detail-value.positive {
+            color: #10b981;
+        }
+        
+        .detail-value.negative {
+            color: #ef4444;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        .pet-info {
+            background: #f0fdf4;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .pet-info h3 {
+            color: #166534;
+            margin-bottom: 12px;
+        }
+        
+        .care-notes {
+            background: #fffbeb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .care-notes h3 {
+            color: #92400e;
+            margin-bottom: 12px;
+        }
+        
+        .care-notes p {
+            color: #78350f;
+            line-height: 1.6;
+        }
+        
+        .loading, .error {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+        
+        .loading p, .error p {
+            font-size: 18px;
+        }
+        
+        .empty-fosterer {
+            color: #888;
+            font-style: italic;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .reputation-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .detail-card {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-btn">← 返回首页</a>
+        
+        <div id="loading" class="loading" style="display: none;">
+            <p>加载中...</p>
+        </div>
+        
+        <div id="error" class="error" style="display: none;">
+            <p id="errorText">加载失败</p>
+        </div>
+        
+        <div id="detailContainer" style="display: none;">
+            <div class="detail-card">
+                <div class="detail-header">
+                    <div>
+                        <h1 id="petName">宠物寄养申请</h1>
+                        <p style="color: #888; margin-top: 8px;" id="createdAt"></p>
+                    </div>
+                    <span id="statusBadge" class="status-badge">待确认</span>
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">寄养开始日期</div>
+                        <div class="info-value" id="startDate"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">寄养结束日期</div>
+                        <div class="info-value" id="endDate"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">寄养时长</div>
+                        <div class="info-value" id="duration"></div>
+                    </div>
+                </div>
+                
+                <div class="section-title">
+                    <span>🐾</span>
+                    <span>宠物信息</span>
+                </div>
+                <div class="pet-info">
+                    <div class="info-grid" style="margin-bottom: 0;">
+                        <div class="info-item">
+                            <div class="info-label">饮食偏好</div>
+                            <div class="info-value" id="petDietPreference"></div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">过敏源</div>
+                            <div class="info-value" id="petAllergies"></div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">常用药品</div>
+                            <div class="info-value" id="petCommonMedications"></div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">紧急联系人</div>
+                            <div class="info-value" id="petEmergencyContact"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section-title">
+                    <span>📝</span>
+                    <span>日常照顾备注</span>
+                </div>
+                <div class="care-notes">
+                    <p id="dailyCareNotes"></p>
+                </div>
+            </div>
+            
+            <div class="detail-card">
+                <div class="section-title">
+                    <span>⭐</span>
+                    <span>双方信誉信息</span>
+                </div>
+                
+                <div class="reputation-section">
+                    <div class="reputation-card owner">
+                        <div class="reputation-header">
+                            <div>
+                                <div class="reputation-role">宠物主人</div>
+                                <div class="reputation-username" id="ownerUsername"></div>
+                                <div id="ownerLevel" class="level-badge"></div>
+                            </div>
+                            <div class="reputation-score-circle">
+                                <span class="score-value" id="ownerScore"></span>
+                                <span class="score-label">信誉分</span>
+                            </div>
+                        </div>
+                        <div class="reputation-details" id="ownerReputationDetails">
+                        </div>
+                    </div>
+                    
+                    <div class="reputation-card fosterer">
+                        <div id="fostererContent">
+                            <div class="reputation-header">
+                                <div>
+                                    <div class="reputation-role">寄养人</div>
+                                    <div class="reputation-username" id="fostererUsername"></div>
+                                    <div id="fostererLevel" class="level-badge"></div>
+                                </div>
+                                <div class="reputation-score-circle">
+                                    <span class="score-value" id="fostererScore"></span>
+                                    <span class="score-label">信誉分</span>
+                                </div>
+                            </div>
+                            <div class="reputation-details" id="fostererReputationDetails">
+                            </div>
+                        </div>
+                        <div id="noFosterer" class="empty-fosterer" style="display: none;">
+                            暂未指定寄养人
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/common.js"></script>
+    <script>
+        let requestId = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            requestId = urlParams.get('id');
+            
+            if (!requestId) {
+                showError('缺少申请ID参数');
+                return;
+            }
+            
+            loadRequestDetail();
+        });
+        
+        function checkAuth() {
+            if (!authToken) {
+                showMessage('请先登录', 'error');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            }
+        }
+        
+        async function loadRequestDetail() {
+            showLoading();
+            hideError();
+            
+            try {
+                const request = await getFosterRequestById(requestId);
+                renderRequestDetail(request);
+                document.getElementById('detailContainer').style.display = 'block';
+            } catch (error) {
+                showError('加载失败：' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function renderRequestDetail(request) {
+            document.getElementById('petName').textContent = request.petName + ' 的寄养申请';
+            document.getElementById('createdAt').textContent = '创建时间：' + request.createdAt;
+            
+            const statusBadge = document.getElementById('statusBadge');
+            statusBadge.textContent = getStatusText(request.status);
+            statusBadge.className = 'status-badge status-' + request.status;
+            
+            document.getElementById('startDate').textContent = request.startDate;
+            document.getElementById('endDate').textContent = request.endDate;
+            
+            const start = new Date(request.startDate);
+            const end = new Date(request.endDate);
+            const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+            document.getElementById('duration').textContent = duration + ' 天';
+            
+            document.getElementById('petDietPreference').textContent = request.petDietPreference || '暂无';
+            document.getElementById('petAllergies').textContent = request.petAllergies || '暂无';
+            document.getElementById('petCommonMedications').textContent = request.petCommonMedications || '暂无';
+            document.getElementById('petEmergencyContact').textContent = request.petEmergencyContact || '暂无';
+            
+            document.getElementById('dailyCareNotes').textContent = request.dailyCareNotes || '暂无特殊备注';
+            
+            if (request.ownerReputation) {
+                renderReputation('owner', request.ownerUsername, request.ownerReputation);
+            }
+            
+            if (request.fostererId && request.fostererReputation) {
+                document.getElementById('fostererContent').style.display = 'block';
+                document.getElementById('noFosterer').style.display = 'none';
+                renderReputation('fosterer', request.fostererUsername, request.fostererReputation);
+            } else {
+                document.getElementById('fostererContent').style.display = 'none';
+                document.getElementById('noFosterer').style.display = 'block';
+            }
+        }
+        
+        function renderReputation(role, username, reputation) {
+            document.getElementById(role + 'Username').textContent = username;
+            document.getElementById(role + 'Score').textContent = reputation.totalScore;
+            
+            const levelBadge = document.getElementById(role + 'Level');
+            levelBadge.textContent = reputation.level;
+            levelBadge.className = 'level-badge level-' + reputation.level;
+            
+            const detailsHtml = `
+                <div class="reputation-detail-item">
+                    <span class="detail-name">注册时长</span>
+                    <span class="detail-value positive">+${reputation.registerMonthsScore}分</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${(reputation.registerMonthsScore / 20) * 100}%; background: #10b981;"></div>
+                </div>
+                
+                <div class="reputation-detail-item">
+                    <span class="detail-name">完成寄养 ${reputation.completedFosters} 次</span>
+                    <span class="detail-value positive">+${reputation.completedFostersScore}分</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${(reputation.completedFostersScore / 25) * 100}%; background: #10b981;"></div>
+                </div>
+                
+                <div class="reputation-detail-item">
+                    <span class="detail-name">平均评分 ${reputation.averageRating.toFixed(2)} (${reputation.reviewCount}条评价)</span>
+                    <span class="detail-value positive">+${reputation.averageRatingScore}分</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${(reputation.averageRatingScore / 30) * 100}%; background: #10b981;"></div>
+                </div>
+                
+                <div class="reputation-detail-item">
+                    <span class="detail-name">违约记录 ${reputation.defaultCount} 次</span>
+                    <span class="detail-value negative">-${reputation.defaultDeduction}分</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.max(0, 100 - (reputation.defaultDeduction / 45) * 100)}%; background: #ef4444;"></div>
+                </div>
+                
+                <div class="reputation-detail-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <span class="detail-name" style="font-weight: 600;">注册天数</span>
+                    <span class="detail-value">${reputation.registerDays} 天</span>
+                </div>
+            `;
+            
+            document.getElementById(role + 'ReputationDetails').innerHTML = detailsHtml;
+        }
+        
+        function getStatusText(status) {
+            const statusMap = {
+                'Pending': '待确认',
+                'Approved': '已同意',
+                'InProgress': '进行中',
+                'Completed': '已完成',
+                'Cancelled': '已取消'
+            };
+            return statusMap[status] || status;
+        }
+        
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('error').style.display = 'block';
+        }
+        
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

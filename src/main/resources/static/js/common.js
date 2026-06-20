@@ -183,6 +183,14 @@ async function getMyFosterStats() {
     return await apiRequest('/api/stats/mine');
 }
 
+async function getReputation(userId) {
+    return await apiRequest('/api/reputation/' + userId);
+}
+
+async function getMyReputation() {
+    return await apiRequest('/api/reputation/mine');
+}
+
 function showMessage(message, type = 'success') {
     const msgDiv = document.createElement('div');
     msgDiv.className = `alert alert-${type}`;

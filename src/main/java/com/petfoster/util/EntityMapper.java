@@ -70,6 +70,31 @@ public class EntityMapper {
                 .build();
     }
 
+    public static FosterRequestDTO.RequestResponse toFosterRequestResponse(
+            FosterRequest request, Pet pet, User owner, User fosterer,
+            ReputationDTO ownerReputation, ReputationDTO fostererReputation) {
+        return FosterRequestDTO.RequestResponse.builder()
+                .id(request.getId())
+                .petId(request.getPetId())
+                .petName(pet != null ? pet.getName() : null)
+                .ownerId(request.getOwnerId())
+                .ownerUsername(getUsername(owner))
+                .fostererId(request.getFostererId())
+                .fostererUsername(getUsername(fosterer))
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
+                .dailyCareNotes(request.getDailyCareNotes())
+                .status(request.getStatus())
+                .createdAt(formatDateTime(request.getCreatedAt()))
+                .petDietPreference(pet != null ? pet.getDietPreference() : null)
+                .petAllergies(pet != null ? pet.getAllergies() : null)
+                .petCommonMedications(pet != null ? pet.getCommonMedications() : null)
+                .petEmergencyContact(pet != null ? pet.getEmergencyContact() : null)
+                .ownerReputation(ownerReputation)
+                .fostererReputation(fostererReputation)
+                .build();
+    }
+
     public static DailyLogDTO.LogResponse toDailyLogResponse(FosterDailyLog log, User fosterer) {
         return DailyLogDTO.LogResponse.builder()
                 .id(log.getId())

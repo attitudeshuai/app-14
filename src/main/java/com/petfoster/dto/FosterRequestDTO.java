@@ -99,5 +99,7 @@ public class FosterRequestDTO {
         private String petAllergies;
         private String petCommonMedications;
         private String petEmergencyContact;
+        private ReputationDTO ownerReputation;
+        private ReputationDTO fostererReputation;
     }
 }

@@ -3,6 +3,7 @@ package com.petfoster.service;
 import com.petfoster.common.BusinessException;
 import com.petfoster.common.PageResponse;
 import com.petfoster.dto.FosterRequestDTO;
+import com.petfoster.dto.ReputationDTO;
 import com.petfoster.entity.FosterRequest;
 import com.petfoster.entity.Notification;
 import com.petfoster.entity.Pet;
@@ -41,6 +42,7 @@ public class FosterRequestService {
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ReputationService reputationService;
 
     private static final Set<FosterRequest.Status> ALLOWED_FROM_PENDING = Set.of(
             FosterRequest.Status.Approved, FosterRequest.Status.Cancelled);
@@ -67,7 +69,7 @@ public class FosterRequestService {
     public FosterRequestDTO.RequestResponse getRequestById(Long id) {
         FosterRequest request = requestRepository.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("寄养申请不存在"));
-        return buildSingleResponse(request);
+        return buildSingleResponseWithReputation(request);
     }
 
     public PageResponse<FosterRequestDTO.RequestResponse> getMyRequests(
@@ -376,6 +378,19 @@ public class FosterRequestService {
         User fosterer = r.getFostererId() != null
                 ? userRepository.findById(r.getFostererId()).orElse(null) : null;
         return EntityMapper.toFosterRequestResponse(r, pet, owner, fosterer);
+    }
+
+    private FosterRequestDTO.RequestResponse buildSingleResponseWithReputation(FosterRequest r) {
+        Pet pet = petRepository.findById(r.getPetId()).orElse(null);
+        User owner = userRepository.findById(r.getOwnerId()).orElse(null);
+        User fosterer = r.getFostererId() != null
+                ? userRepository.findById(r.getFostererId()).orElse(null) : null;
+
+        ReputationDTO ownerReputation = reputationService.calculateReputation(r.getOwnerId());
+        ReputationDTO fostererReputation = r.getFostererId() != null
+                ? reputationService.calculateReputation(r.getFostererId()) : null;
+
+        return EntityMapper.toFosterRequestResponse(r, pet, owner, fosterer, ownerReputation, fostererReputation);
     }
 
     @Transactional
