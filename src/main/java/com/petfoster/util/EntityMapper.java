@@ -39,6 +39,10 @@ public class EntityMapper {
                 .age(pet.getAge())
                 .dietNotes(pet.getDietNotes())
                 .medicalNotes(pet.getMedicalNotes())
+                .dietPreference(pet.getDietPreference())
+                .allergies(pet.getAllergies())
+                .commonMedications(pet.getCommonMedications())
+                .emergencyContact(pet.getEmergencyContact())
                 .photoUrl(pet.getPhotoUrl())
                 .createdAt(formatDateTime(pet.getCreatedAt()))
                 .build();
@@ -59,6 +63,10 @@ public class EntityMapper {
                 .dailyCareNotes(request.getDailyCareNotes())
                 .status(request.getStatus())
                 .createdAt(formatDateTime(request.getCreatedAt()))
+                .petDietPreference(pet != null ? pet.getDietPreference() : null)
+                .petAllergies(pet != null ? pet.getAllergies() : null)
+                .petCommonMedications(pet != null ? pet.getCommonMedications() : null)
+                .petEmergencyContact(pet != null ? pet.getEmergencyContact() : null)
                 .build();
     }
 

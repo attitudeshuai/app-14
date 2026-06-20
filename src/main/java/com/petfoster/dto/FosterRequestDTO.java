@@ -95,5 +95,9 @@ public class FosterRequestDTO {
         private String dailyCareNotes;
         private FosterRequest.Status status;
         private String createdAt;
+        private String petDietPreference;
+        private String petAllergies;
+        private String petCommonMedications;
+        private String petEmergencyContact;
     }
 }

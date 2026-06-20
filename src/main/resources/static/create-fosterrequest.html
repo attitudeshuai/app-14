@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建寄养申请 - PetFoster</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .back-btn {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+        
+        .form-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .form-card h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .form-card .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .form-group label .required {
+            color: #ef4444;
+            margin-left: 4px;
+        }
+        
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group input[type="number"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .date-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .pet-info-card {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8f5e9 100%);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+        }
+        
+        .pet-info-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .pet-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: #f0f0f0;
+        }
+        
+        .pet-photo-placeholder {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .pet-basic-info h2 {
+            color: #333;
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+        
+        .pet-basic-info .pet-meta {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .health-section {
+            margin-top: 20px;
+        }
+        
+        .health-section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+        }
+        
+        .health-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+        
+        .health-item {
+            background: white;
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
+        
+        .health-item.diet {
+            border-left: 3px solid #10b981;
+        }
+        
+        .health-item.health {
+            border-left: 3px solid #f59e0b;
+        }
+        
+        .health-item.emergency {
+            border-left: 3px solid #ef4444;
+        }
+        
+        .health-label {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        
+        .health-value {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .health-value.empty {
+            color: #bbb;
+            font-style: italic;
+        }
+        
+        .warning-banner {
+            background: #fff7ed;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .warning-banner .icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .warning-banner .text {
+            color: #92400e;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .warning-banner .text strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .loading, .error {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+        
+        .loading p, .error p {
+            font-size: 18px;
+        }
+        
+        .empty-pets {
+            text-align: center;
+            padding: 40px 20px;
+            color: #888;
+        }
+        
+        .empty-pets p {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-btn">← 返回首页</a>
+        
+        <div id="loading" class="loading" style="display: none;">
+            <p>加载中...</p>
+        </div>
+        
+        <div id="error" class="error" style="display: none;">
+            <p id="errorText">加载失败</p>
+        </div>
+        
+        <div id="emptyPets" class="form-card" style="display: none;">
+            <div class="empty-pets">
+                <p>您还没有创建宠物档案，请先创建宠物</p>
+                <a href="create-pet.html" class="btn">创建宠物档案</a>
+            </div>
+        </div>
+        
+        <div id="formContainer" style="display: none;">
+            <div class="form-card">
+                <h1>📋 创建寄养申请</h1>
+                <p class="subtitle">为您的爱宠寻找临时的照顾者</p>
+                
+                <div class="form-group">
+                    <label for="petSelect">选择宠物<span class="required">*</span></label>
+                    <select id="petSelect" class="pet-select" required>
+                        <option value="">请选择宠物</option>
+                    </select>
+                </div>
+                
+                <div id="petHealthInfo"></div>
+                
+                <div class="warning-banner">
+                    <span class="icon">⚠️</span>
+                    <div class="text">
+                        <strong>请仔细核对以上宠物健康信息</strong>
+                        寄养人将看到这些信息，以便更好地照顾您的宠物。如需修改，请前往宠物档案编辑页面。
+                    </div>
+                </div>
+                
+                <div class="date-row">
+                    <div class="form-group">
+                        <label for="startDate">寄养开始日期<span class="required">*</span></label>
+                        <input type="date" id="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">寄养结束日期<span class="required">*</span></label>
+                        <input type="date" id="endDate" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dailyCareNotes">日常照顾备注</label>
+                    <textarea id="dailyCareNotes" placeholder="请描述宠物的日常照顾需求，例如遛狗频率、特殊习惯等"></textarea>
+                </div>
+                
+                <button type="button" class="btn" id="submitBtn" onclick="handleSubmit()">提交寄养申请</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/common.js"></script>
+    <script>
+        let pets = [];
+        let currentPet = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            init();
+        });
+        
+        function checkAuth() {
+            if (!authToken) {
+                showMessage('请先登录', 'error');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            }
+        }
+        
+        async function init() {
+            showLoading();
+            hideError();
+            
+            try {
+                const result = await getMyPets();
+                pets = result.content || [];
+                
+                if (pets.length === 0) {
+                    document.getElementById('emptyPets').style.display = 'block';
+                    hideLoading();
+                    return;
+                }
+                
+                const select = document.getElementById('petSelect');
+                pets.forEach(pet => {
+                    const option = document.createElement('option');
+                    option.value = pet.id;
+                    option.textContent = `${pet.name}（${pet.species} - ${pet.breed || '未知品种'}）`;
+                    select.appendChild(option);
+                });
+                
+                select.addEventListener('change', function() {
+                    if (this.value) {
+                        loadPetHealthInfo(parseInt(this.value));
+                    } else {
+                        document.getElementById('petHealthInfo').innerHTML = '';
+                        currentPet = null;
+                    }
+                });
+                
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('startDate').min = today;
+                document.getElementById('endDate').min = today;
+                
+                document.getElementById('startDate').addEventListener('change', function() {
+                    document.getElementById('endDate').min = this.value;
+                });
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const petId = urlParams.get('petId');
+                if (petId) {
+                    select.value = petId;
+                    await loadPetHealthInfo(parseInt(petId));
+                }
+                
+                document.getElementById('formContainer').style.display = 'block';
+            } catch (error) {
+                showError('加载失败：' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function loadPetHealthInfo(petId) {
+            try {
+                const pet = await getPetById(petId);
+                currentPet = pet;
+                renderPetHealthInfo(pet);
+            } catch (error) {
+                showMessage('加载宠物信息失败：' + error.message, 'error');
+            }
+        }
+        
+        function renderPetHealthInfo(pet) {
+            const speciesEmoji = getSpeciesEmoji(pet.species);
+            const photoHtml = pet.photoUrl 
+                ? `<img src="${pet.photoUrl}" alt="${pet.name}" class="pet-photo">`
+                : `<div class="pet-photo-placeholder">${speciesEmoji}</div>`;
+            
+            document.getElementById('petHealthInfo').innerHTML = `
+                <div class="pet-info-card">
+                    <div class="pet-info-header">
+                        ${photoHtml}
+                        <div class="pet-basic-info">
+                            <h2>${escapeHtml(pet.name)}</h2>
+                            <p class="pet-meta">
+                                ${escapeHtml(pet.species)}
+                                ${pet.breed ? ' · ' + escapeHtml(pet.breed) : ''}
+                                ${pet.age !== null && pet.age !== undefined ? ' · ' + pet.age + '岁' : ''}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="health-section">
+                        <div class="health-section-title">
+                            <span>🍽️</span>
+                            <span>饮食信息</span>
+                        </div>
+                        <div class="health-grid">
+                            <div class="health-item diet">
+                                <div class="health-label">饮食注意事项</div>
+                                <div class="health-value ${pet.dietNotes ? '' : 'empty'}">${escapeHtml(pet.dietNotes || '暂无')}</div>
+                            </div>
+                            <div class="health-item diet">
+                                <div class="health-label">饮食偏好</div>
+                                <div class="health-value ${pet.dietPreference ? '' : 'empty'}">${escapeHtml(pet.dietPreference || '暂无')}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="health-section">
+                        <div class="health-section-title">
+                            <span>💊</span>
+                            <span>健康信息</span>
+                        </div>
+                        <div class="health-grid">
+                            <div class="health-item health">
+                                <div class="health-label">医疗记录</div>
+                                <div class="health-value ${pet.medicalNotes ? '' : 'empty'}">${escapeHtml(pet.medicalNotes || '暂无')}</div>
+                            </div>
+                            <div class="health-item health">
+                                <div class="health-label">过敏源</div>
+                                <div class="health-value ${pet.allergies ? '' : 'empty'}">${escapeHtml(pet.allergies || '暂无')}</div>
+                            </div>
+                            <div class="health-item health">
+                                <div class="health-label">常用药品</div>
+                                <div class="health-value ${pet.commonMedications ? '' : 'empty'}">${escapeHtml(pet.commonMedications || '暂无')}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="health-section">
+                        <div class="health-section-title">
+                            <span>📞</span>
+                            <span>紧急联系</span>
+                        </div>
+                        <div class="health-grid">
+                            <div class="health-item emergency" style="grid-column: 1 / -1;">
+                                <div class="health-label">紧急联系人</div>
+                                <div class="health-value ${pet.emergencyContact ? '' : 'empty'}">${escapeHtml(pet.emergencyContact || '暂无')}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function handleSubmit() {
+            const petSelect = document.getElementById('petSelect');
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const dailyCareNotes = document.getElementById('dailyCareNotes').value;
+            
+            if (!petSelect.value) {
+                showMessage('请选择宠物', 'error');
+                return;
+            }
+            if (!startDate) {
+                showMessage('请选择寄养开始日期', 'error');
+                return;
+            }
+            if (!endDate) {
+                showMessage('请选择寄养结束日期', 'error');
+                return;
+            }
+            if (new Date(startDate) > new Date(endDate)) {
+                showMessage('结束日期不能早于开始日期', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = '提交中...';
+            
+            try {
+                const requestData = {
+                    petId: parseInt(petSelect.value),
+                    startDate: startDate,
+                    endDate: endDate
+                };
+                
+                if (dailyCareNotes) {
+                    requestData.dailyCareNotes = dailyCareNotes;
+                }
+                
+                await createFosterRequest(requestData);
+                showMessage('寄养申请创建成功！');
+                
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            } catch (error) {
+                showMessage(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '提交寄养申请';
+            }
+        }
+        
+        function getSpeciesEmoji(species) {
+            switch(species) {
+                case '猫': return '🐱';
+                case '狗': return '🐶';
+                default: return '🐾';
+            }
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('error').style.display = 'block';
+        }
+        
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

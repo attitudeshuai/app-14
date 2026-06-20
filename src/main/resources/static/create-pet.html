@@ -289,6 +289,26 @@
                 </div>
                 
                 <div class="form-group">
+                    <label for="dietPreference">饮食偏好</label>
+                    <textarea id="dietPreference" placeholder="例如：喜欢鸡肉口味，不喜欢吃鱼"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">过敏源</label>
+                    <textarea id="allergies" placeholder="例如：对鸡肉过敏，不能吃牛奶"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="commonMedications">常用药品</label>
+                    <textarea id="commonMedications" placeholder="例如：每月驱虫药，肾脏保健药每天1次"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="emergencyContact">紧急联系人</label>
+                    <input type="text" id="emergencyContact" placeholder="例如：张三 13800138001 / 宠物医院 010-12345678">
+                </div>
+                
+                <div class="form-group">
                     <label for="medicalNotes">医疗记录</label>
                     <textarea id="medicalNotes" placeholder="例如：已接种疫苗，对青霉素过敏"></textarea>
                 </div>
@@ -438,6 +458,18 @@
                 
                 const medicalNotes = document.getElementById('medicalNotes').value;
                 if (medicalNotes) formData.append('medicalNotes', medicalNotes);
+                
+                const dietPreference = document.getElementById('dietPreference').value;
+                if (dietPreference) formData.append('dietPreference', dietPreference);
+                
+                const allergies = document.getElementById('allergies').value;
+                if (allergies) formData.append('allergies', allergies);
+                
+                const commonMedications = document.getElementById('commonMedications').value;
+                if (commonMedications) formData.append('commonMedications', commonMedications);
+                
+                const emergencyContact = document.getElementById('emergencyContact').value;
+                if (emergencyContact) formData.append('emergencyContact', emergencyContact);
                 
                 if (photoUrlInput) {
                     formData.append('photoUrl', photoUrlInput);

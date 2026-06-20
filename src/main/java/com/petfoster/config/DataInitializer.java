@@ -100,6 +100,10 @@ public class DataInitializer implements CommandLineRunner {
                 .age(3)
                 .dietNotes("每天3次，每次30克猫粮，早晚各1次湿粮")
                 .medicalNotes("已绝育，定期驱虫，无过敏史")
+                .dietPreference("喜欢吃鸡肉口味的猫粮，不喜欢鱼味")
+                .allergies("无")
+                .commonMedications("无")
+                .emergencyContact("张三 13800138001")
                 .photoUrl("https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400")
                 .build();
         petRepository.save(pet1);
@@ -112,6 +116,10 @@ public class DataInitializer implements CommandLineRunner {
                 .age(5)
                 .dietNotes("每天2次，每次200克狗粮，需要大量运动")
                 .medicalNotes("对鸡肉过敏，已打狂犬疫苗")
+                .dietPreference("喜欢牛肉口味，喜欢啃咬零食")
+                .allergies("鸡肉、玉米")
+                .commonMedications("无")
+                .emergencyContact("张三 13800138001")
                 .photoUrl("https://images.unsplash.com/photo-1552053831-71594a27632d?w=400")
                 .build();
         petRepository.save(pet2);
@@ -124,6 +132,10 @@ public class DataInitializer implements CommandLineRunner {
                 .age(2)
                 .dietNotes("自由采食猫粮，每天加水煮鸡胸肉")
                 .medicalNotes("胆小，容易应激，需安静环境")
+                .dietPreference("鸡胸肉、三文鱼猫粮")
+                .allergies("牛奶")
+                .commonMedications("无")
+                .emergencyContact("李四 13800138002")
                 .photoUrl("https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=400")
                 .build();
         petRepository.save(pet3);
@@ -136,6 +148,10 @@ public class DataInitializer implements CommandLineRunner {
                 .age(4)
                 .dietNotes("每天2次，每次150克，零食适量")
                 .medicalNotes("性格活泼，需要每天遛狗2次")
+                .dietPreference("狗粮、鸡肉干")
+                .allergies("无")
+                .commonMedications("每月驱虫药")
+                .emergencyContact("王五 13800138003")
                 .photoUrl("https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400")
                 .build();
         petRepository.save(pet4);
@@ -148,6 +164,10 @@ public class DataInitializer implements CommandLineRunner {
                 .age(1)
                 .dietNotes("干草无限量，每天少量蔬果")
                 .medicalNotes("胆小，不要吓到它")
+                .dietPreference("提摩西草、胡萝卜、苹果")
+                .allergies("无")
+                .commonMedications("无")
+                .emergencyContact("赵六 13800138004")
                 .photoUrl("https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=400")
                 .build();
         petRepository.save(pet5);
@@ -160,6 +180,10 @@ public class DataInitializer implements CommandLineRunner {
                 .age(6)
                 .dietNotes("老年猫粮，少食多餐")
                 .medicalNotes("肾功能不太好，需定期复查")
+                .dietPreference("肾脏处方粮、温水泡软")
+                .allergies("无")
+                .commonMedications("肾脏保健药，每天1次")
+                .emergencyContact("孙七 13800138005 / 宠物医院 010-12345678")
                 .photoUrl("https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400")
                 .build();
         petRepository.save(pet6);
@@ -172,6 +196,10 @@ public class DataInitializer implements CommandLineRunner {
                 .age(2)
                 .dietNotes("每天3次，运动量大")
                 .medicalNotes("正在训练中，很聪明")
+                .dietPreference("所有食物都喜欢，注意控制食量")
+                .allergies("海鲜")
+                .commonMedications("无")
+                .emergencyContact("李四 13800138002")
                 .photoUrl("https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400")
                 .build();
         petRepository.save(pet7);
@@ -184,6 +212,10 @@ public class DataInitializer implements CommandLineRunner {
                 .age(4)
                 .dietNotes("正常猫粮即可")
                 .medicalNotes("身体健康，性格温顺")
+                .dietPreference("不挑食")
+                .allergies("无")
+                .commonMedications("无")
+                .emergencyContact("王五 13800138003")
                 .photoUrl("https://images.unsplash.com/photo-1561948955-570b270e7c36?w=400")
                 .build();
         petRepository.save(pet8);

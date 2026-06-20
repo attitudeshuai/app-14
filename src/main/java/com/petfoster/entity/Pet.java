@@ -41,6 +41,18 @@ public class Pet {
     @Column(name = "medical_notes", length = 1000)
     private String medicalNotes;
 
+    @Column(name = "diet_preference", length = 1000)
+    private String dietPreference;
+
+    @Column(name = "allergies", length = 1000)
+    private String allergies;
+
+    @Column(name = "common_medications", length = 1000)
+    private String commonMedications;
+
+    @Column(name = "emergency_contact", length = 200)
+    private String emergencyContact;
+
     @Column(name = "photo_url", length = 500)
     private String photoUrl;
 

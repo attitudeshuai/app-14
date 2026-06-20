@@ -125,6 +125,10 @@ public class PetService {
                     .age(request.getAge())
                     .dietNotes(request.getDietNotes())
                     .medicalNotes(request.getMedicalNotes())
+                    .dietPreference(request.getDietPreference())
+                    .allergies(request.getAllergies())
+                    .commonMedications(request.getCommonMedications())
+                    .emergencyContact(request.getEmergencyContact())
                     .photoUrl(finalPhotoUrl)
                     .build();
 
@@ -177,6 +181,18 @@ public class PetService {
             }
             if (request.getMedicalNotes() != null) {
                 pet.setMedicalNotes(request.getMedicalNotes());
+            }
+            if (request.getDietPreference() != null) {
+                pet.setDietPreference(request.getDietPreference());
+            }
+            if (request.getAllergies() != null) {
+                pet.setAllergies(request.getAllergies());
+            }
+            if (request.getCommonMedications() != null) {
+                pet.setCommonMedications(request.getCommonMedications());
+            }
+            if (request.getEmergencyContact() != null) {
+                pet.setEmergencyContact(request.getEmergencyContact());
             }
             if (request.getPhotoUrl() != null) {
                 pet.setPhotoUrl(request.getPhotoUrl());

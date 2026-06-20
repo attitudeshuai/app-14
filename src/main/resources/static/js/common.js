@@ -144,8 +144,23 @@ async function getMyPets() {
     return await apiRequest('/api/pets/mine');
 }
 
+async function getPetById(id) {
+    return await apiRequest('/api/pets/' + id);
+}
+
 async function getFosterRequests() {
     return await apiRequest('/api/fosterrequests/mine');
+}
+
+async function getFosterRequestById(id) {
+    return await apiRequest('/api/fosterrequests/' + id);
+}
+
+async function createFosterRequest(requestData) {
+    return await apiRequest('/api/fosterrequests', {
+        method: 'POST',
+        body: JSON.stringify(requestData)
+    });
 }
 
 async function createReview(reviewData) {

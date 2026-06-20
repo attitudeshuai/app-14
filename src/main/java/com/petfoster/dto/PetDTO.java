@@ -24,6 +24,10 @@ public class PetDTO {
         private Integer age;
         private String dietNotes;
         private String medicalNotes;
+        private String dietPreference;
+        private String allergies;
+        private String commonMedications;
+        private String emergencyContact;
         private String photoUrl;
     }
 
@@ -38,6 +42,10 @@ public class PetDTO {
         private Integer age;
         private String dietNotes;
         private String medicalNotes;
+        private String dietPreference;
+        private String allergies;
+        private String commonMedications;
+        private String emergencyContact;
         private String photoUrl;
     }
 
@@ -55,6 +63,10 @@ public class PetDTO {
         private Integer age;
         private String dietNotes;
         private String medicalNotes;
+        private String dietPreference;
+        private String allergies;
+        private String commonMedications;
+        private String emergencyContact;
         private String photoUrl;
         private String createdAt;
     }
