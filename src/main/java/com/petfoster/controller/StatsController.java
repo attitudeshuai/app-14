@@ -2,11 +2,13 @@ package com.petfoster.controller;
 
 import com.petfoster.common.ApiResponse;
 import com.petfoster.dto.StatsDTO;
+import com.petfoster.entity.User;
 import com.petfoster.service.StatsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -44,5 +46,11 @@ public class StatsController {
     @Operation(summary = "平均寄养时长统计", description = "统计寄养时长分布、平均值、中位数及按品种/物种分类的平均时长")
     public ApiResponse<StatsDTO.FosterDurationStats> getFosterDuration() {
         return ApiResponse.success(statsService.getFosterDurationStats());
+    }
+
+    @GetMapping("/mine")
+    @Operation(summary = "我的寄养统计", description = "获取当前登录用户的寄养统计：发布申请数、完成寄养数、收到评价数、平均评分")
+    public ApiResponse<StatsDTO.UserFosterStats> getMyFosterStats(@AuthenticationPrincipal User user) {
+        return ApiResponse.success(statsService.getUserFosterStats(user.getId()));
     }
 }

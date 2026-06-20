@@ -96,4 +96,15 @@ public class StatsDTO {
         private Map<String, Double> averageBySpecies;
         private Map<String, Double> averageByBreed;
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UserFosterStats {
+        private long publishedRequests;
+        private long completedFosters;
+        private long receivedReviews;
+        private double averageRating;
+    }
 }

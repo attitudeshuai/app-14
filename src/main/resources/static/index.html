@@ -182,6 +182,63 @@
         .test-accounts p {
             margin-bottom: 5px;
         }
+
+        .foster-stats {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 900px;
+            margin: 0 auto 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .foster-stats h3 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 22px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            border-radius: 12px;
+            padding: 25px 20px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .stat-card .stat-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-card.rating .stat-value {
+            color: #f59e0b;
+        }
     </style>
 </head>
 <body>
@@ -219,6 +276,32 @@
                 <h2 id="welcomeText">欢迎回来！</h2>
                 <p id="userEmail"></p>
                 <button class="btn logout-btn" onclick="handleLogout()">退出登录</button>
+            </div>
+
+            <div class="foster-stats">
+                <h3>📊 我的寄养统计</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-value" id="publishedRequests">0</div>
+                        <div class="stat-label">发布申请数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-value" id="completedFosters">0</div>
+                        <div class="stat-label">完成寄养数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💬</div>
+                        <div class="stat-value" id="receivedReviews">0</div>
+                        <div class="stat-label">收到评价数</div>
+                    </div>
+                    <div class="stat-card rating">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-value" id="averageRating">0.00</div>
+                        <div class="stat-label">平均评分</div>
+                    </div>
+                </div>
             </div>
             
             <div class="nav-grid">
@@ -275,6 +358,7 @@
                     const data = await login(username, password);
                     showMessage('登录成功！');
                     showMainSection(data.user);
+                    loadFosterStats();
                 } catch (error) {
                     showMessage(error.message, 'error');
                 }
@@ -291,6 +375,7 @@
             try {
                 const user = await apiRequest('/api/auth/me');
                 showMainSection(user);
+                loadFosterStats();
             } catch (error) {
                 clearAuthToken();
             }
@@ -301,6 +386,37 @@
             document.getElementById('mainSection').style.display = 'block';
             document.getElementById('welcomeText').textContent = '欢迎回来，' + user.username + '！';
             document.getElementById('userEmail').textContent = user.email;
+        }
+
+        async function loadFosterStats() {
+            try {
+                const stats = await getMyFosterStats();
+                animateNumber('publishedRequests', stats.publishedRequests);
+                animateNumber('completedFosters', stats.completedFosters);
+                animateNumber('receivedReviews', stats.receivedReviews);
+                document.getElementById('averageRating').textContent = stats.averageRating.toFixed(2);
+            } catch (error) {
+                console.error('加载寄养统计失败:', error);
+            }
+        }
+
+        function animateNumber(elementId, target) {
+            const element = document.getElementById(elementId);
+            const duration = 800;
+            const start = 0;
+            const startTime = performance.now();
+
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                const current = Math.floor(start + (target - start) * easeProgress);
+                element.textContent = current;
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            requestAnimationFrame(update);
         }
         
         function handleLogout() {

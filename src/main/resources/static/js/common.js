@@ -179,6 +179,10 @@ async function getReviewById(id) {
     return await apiRequest('/api/fosterreviews/' + id);
 }
 
+async function getMyFosterStats() {
+    return await apiRequest('/api/stats/mine');
+}
+
 function showMessage(message, type = 'success') {
     const msgDiv = document.createElement('div');
     msgDiv.className = `alert alert-${type}`;

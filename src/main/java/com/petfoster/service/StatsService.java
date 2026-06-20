@@ -361,4 +361,20 @@ public class StatsService {
                 .averageByBreed(averageByBreed)
                 .build();
     }
+
+    public StatsDTO.UserFosterStats getUserFosterStats(Long userId) {
+        long publishedRequests = requestRepository.countByOwnerId(userId);
+        long completedFosters = requestRepository.countCompletedByUserId(userId);
+        long receivedReviews = reviewRepository.countByRevieweeId(userId);
+
+        Double avgRating = reviewRepository.findAverageRatingByRevieweeId(userId);
+        double averageRating = avgRating != null ? Math.round(avgRating * 100.0) / 100.0 : 0.0;
+
+        return StatsDTO.UserFosterStats.builder()
+                .publishedRequests(publishedRequests)
+                .completedFosters(completedFosters)
+                .receivedReviews(receivedReviews)
+                .averageRating(averageRating)
+                .build();
+    }
 }

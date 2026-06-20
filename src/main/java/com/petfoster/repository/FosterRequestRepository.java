@@ -81,4 +81,10 @@ public interface FosterRequestRepository extends JpaRepository<FosterRequest, Lo
     @Query("SELECT r FROM FosterRequest r WHERE r.status = com.petfoster.entity.FosterRequest$Status.InProgress " +
            "AND r.endDate = :endDate")
     List<FosterRequest> findInProgressEndingOnDate(@Param("endDate") LocalDate endDate);
+
+    long countByOwnerId(Long ownerId);
+
+    @Query("SELECT COUNT(r) FROM FosterRequest r WHERE (r.ownerId = :userId OR r.fostererId = :userId) " +
+           "AND r.status = com.petfoster.entity.FosterRequest$Status.Completed")
+    long countCompletedByUserId(@Param("userId") Long userId);
 }
