@@ -148,6 +148,22 @@ async function getFosterRequests() {
     return await apiRequest('/api/fosterrequests/mine');
 }
 
+async function createReview(reviewData) {
+    return await apiRequest('/api/fosterreviews', {
+        method: 'POST',
+        body: JSON.stringify(reviewData)
+    });
+}
+
+async function getReviews(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return await apiRequest('/api/fosterreviews' + (query ? '?' + query : ''));
+}
+
+async function getReviewById(id) {
+    return await apiRequest('/api/fosterreviews/' + id);
+}
+
 function showMessage(message, type = 'success') {
     const msgDiv = document.createElement('div');
     msgDiv.className = `alert alert-${type}`;

@@ -34,6 +34,9 @@ public class StatsDTO {
         private Long userId;
         private String username;
         private Double averageRating;
+        private Double averageResponsibility;
+        private Double averageCommunication;
+        private Double averagePetCondition;
         private long reviewCount;
     }
 

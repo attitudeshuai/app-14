@@ -34,5 +34,14 @@ public interface FosterReviewRepository extends JpaRepository<FosterReview, Long
     @Query("SELECT AVG(r.rating) FROM FosterReview r WHERE r.revieweeId = :revieweeId")
     Double findAverageRatingByRevieweeId(@Param("revieweeId") Long revieweeId);
 
+    @Query("SELECT AVG(r.responsibilityRating) FROM FosterReview r WHERE r.revieweeId = :revieweeId")
+    Double findAverageResponsibilityByRevieweeId(@Param("revieweeId") Long revieweeId);
+
+    @Query("SELECT AVG(r.communicationRating) FROM FosterReview r WHERE r.revieweeId = :revieweeId")
+    Double findAverageCommunicationByRevieweeId(@Param("revieweeId") Long revieweeId);
+
+    @Query("SELECT AVG(r.petConditionRating) FROM FosterReview r WHERE r.revieweeId = :revieweeId")
+    Double findAveragePetConditionByRevieweeId(@Param("revieweeId") Long revieweeId);
+
     long countByRevieweeId(Long revieweeId);
 }

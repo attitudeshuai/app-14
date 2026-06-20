@@ -380,6 +380,9 @@ public class DataInitializer implements CommandLineRunner {
                 .requestId(1L)
                 .reviewerId(1L)
                 .revieweeId(2L)
+                .responsibilityRating(5)
+                .communicationRating(5)
+                .petConditionRating(5)
                 .rating(5)
                 .content("非常感谢李四的照顾！小白回来状态很好，每天都有照片和详细的日报，太让人放心了！强烈推荐！")
                 .build();
@@ -389,6 +392,9 @@ public class DataInitializer implements CommandLineRunner {
                 .requestId(1L)
                 .reviewerId(2L)
                 .revieweeId(1L)
+                .responsibilityRating(5)
+                .communicationRating(5)
+                .petConditionRating(5)
                 .rating(5)
                 .content("小白真的太可爱了！很乖很听话，照顾它是件愉快的事。张三主人交代得很清楚，沟通顺畅。")
                 .build();
@@ -398,6 +404,9 @@ public class DataInitializer implements CommandLineRunner {
                 .requestId(7L)
                 .reviewerId(2L)
                 .revieweeId(4L)
+                .responsibilityRating(4)
+                .communicationRating(5)
+                .petConditionRating(4)
                 .rating(4)
                 .content("整体不错，小黑照顾得挺好的。如果遛狗时间能再长一点就更完美了。")
                 .build();
@@ -407,6 +416,9 @@ public class DataInitializer implements CommandLineRunner {
                 .requestId(7L)
                 .reviewerId(4L)
                 .revieweeId(2L)
+                .responsibilityRating(5)
+                .communicationRating(5)
+                .petConditionRating(5)
                 .rating(5)
                 .content("小黑非常听话，训练有素！二黑主人也非常nice，沟通很愉快。期待下次合作！")
                 .build();

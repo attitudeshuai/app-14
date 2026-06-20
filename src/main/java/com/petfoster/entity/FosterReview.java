@@ -30,6 +30,15 @@ public class FosterReview {
     @Column(name = "reviewee_id", nullable = false)
     private Long revieweeId;
 
+    @Column(name = "responsibility_rating", nullable = false)
+    private Integer responsibilityRating;
+
+    @Column(name = "communication_rating", nullable = false)
+    private Integer communicationRating;
+
+    @Column(name = "pet_condition_rating", nullable = false)
+    private Integer petConditionRating;
+
     @Column(nullable = false)
     private Integer rating;
 

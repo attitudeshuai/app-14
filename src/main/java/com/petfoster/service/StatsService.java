@@ -179,12 +179,22 @@ public class StatsService {
             if (reviewCount == 0) continue;
 
             Double avgRating = reviewRepository.findAverageRatingByRevieweeId(user.getId());
+            Double avgResponsibility = reviewRepository.findAverageResponsibilityByRevieweeId(user.getId());
+            Double avgCommunication = reviewRepository.findAverageCommunicationByRevieweeId(user.getId());
+            Double avgPetCondition = reviewRepository.findAveragePetConditionByRevieweeId(user.getId());
+
             if (avgRating == null) avgRating = 0.0;
+            if (avgResponsibility == null) avgResponsibility = 0.0;
+            if (avgCommunication == null) avgCommunication = 0.0;
+            if (avgPetCondition == null) avgPetCondition = 0.0;
 
             allUsers.add(StatsDTO.TopUser.builder()
                     .userId(user.getId())
                     .username(user.getUsername())
                     .averageRating(Math.round(avgRating * 100.0) / 100.0)
+                    .averageResponsibility(Math.round(avgResponsibility * 100.0) / 100.0)
+                    .averageCommunication(Math.round(avgCommunication * 100.0) / 100.0)
+                    .averagePetCondition(Math.round(avgPetCondition * 100.0) / 100.0)
                     .reviewCount(reviewCount)
                     .build());
         }

@@ -35,6 +35,11 @@ public class ReviewService {
     private final FosterRequestRepository requestRepository;
     private final UserRepository userRepository;
 
+    private int calculateOverallRating(int responsibility, int communication, int petCondition) {
+        double avg = (responsibility + communication + petCondition) / 3.0;
+        return (int) Math.round(avg);
+    }
+
     public PageResponse<ReviewDTO.ReviewResponse> getReviews(
             int page, int size, String sort,
             Long requestId, Long reviewerId, Long revieweeId,
@@ -80,11 +85,20 @@ public class ReviewService {
             throw BusinessException.badRequest("您已对此寄养申请进行过评价");
         }
 
+        int overallRating = calculateOverallRating(
+                req.getResponsibilityRating(),
+                req.getCommunicationRating(),
+                req.getPetConditionRating()
+        );
+
         FosterReview review = FosterReview.builder()
                 .requestId(req.getRequestId())
                 .reviewerId(userId)
                 .revieweeId(req.getRevieweeId())
-                .rating(req.getRating())
+                .responsibilityRating(req.getResponsibilityRating())
+                .communicationRating(req.getCommunicationRating())
+                .petConditionRating(req.getPetConditionRating())
+                .rating(overallRating)
                 .content(req.getContent())
                 .build();
 
@@ -106,8 +120,27 @@ public class ReviewService {
             throw BusinessException.forbidden("无权限修改此评价");
         }
 
-        if (req.getRating() != null) {
-            review.setRating(req.getRating());
+        boolean needRecalculate = false;
+
+        if (req.getResponsibilityRating() != null) {
+            review.setResponsibilityRating(req.getResponsibilityRating());
+            needRecalculate = true;
+        }
+        if (req.getCommunicationRating() != null) {
+            review.setCommunicationRating(req.getCommunicationRating());
+            needRecalculate = true;
+        }
+        if (req.getPetConditionRating() != null) {
+            review.setPetConditionRating(req.getPetConditionRating());
+            needRecalculate = true;
+        }
+        if (needRecalculate) {
+            int overallRating = calculateOverallRating(
+                    review.getResponsibilityRating(),
+                    review.getCommunicationRating(),
+                    review.getPetConditionRating()
+            );
+            review.setRating(overallRating);
         }
         if (req.getContent() != null) {
             review.setContent(req.getContent());

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建寄养评价 - PetFoster</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .back-btn:hover {
+            opacity: 1;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .rating-group {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .rating-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .rating-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .rating-label span:first-child {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .rating-label .rating-desc {
+            font-size: 13px;
+            color: #666;
+            font-weight: normal;
+        }
+
+        .stars {
+            display: flex;
+            gap: 8px;
+        }
+
+        .star {
+            font-size: 32px;
+            cursor: pointer;
+            color: #e0e0e0;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .star:hover {
+            transform: scale(1.1);
+        }
+
+        .star.active {
+            color: #fbbf24;
+        }
+
+        .overall-rating {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .overall-rating-title {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .overall-rating-value {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .overall-rating-stars {
+            font-size: 24px;
+            color: #fbbf24;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .tip {
+            background: #e0f2fe;
+            border-left: 4px solid #0ea5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #0c4a6e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-btn">← 返回首页</a>
+
+        <div class="header">
+            <h1>⭐ 创建寄养评价</h1>
+            <p>请从多个维度为本次寄养体验进行评价</p>
+        </div>
+
+        <div class="form-card">
+            <div class="tip">
+                💡 综合得分将根据三个维度的评分自动计算，为了保证评价的客观性，请如实填写每个维度的评分。
+            </div>
+
+            <form id="reviewForm">
+                <div class="form-section">
+                    <div class="form-section-title">选择寄养申请</div>
+                    <div class="form-group">
+                        <label for="requestId">寄养申请</label>
+                        <select id="requestId" required>
+                            <option value="">请选择已完成的寄养申请</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">多维度评分</div>
+
+                    <div class="rating-group">
+                        <div class="rating-label">
+                            <span>责任心</span>
+                            <span class="rating-desc">是否按时完成寄养任务、信守承诺</span>
+                        </div>
+                        <div class="stars" data-rating="responsibility">
+                            <span class="star" data-value="1">★</span>
+                            <span class="star" data-value="2">★</span>
+                            <span class="star" data-value="3">★</span>
+                            <span class="star" data-value="4">★</span>
+                            <span class="star" data-value="5">★</span>
+                        </div>
+                        <input type="hidden" id="responsibilityRating" value="">
+                    </div>
+
+                    <div class="rating-group">
+                        <div class="rating-label">
+                            <span>沟通能力</span>
+                            <span class="rating-desc">沟通是否及时顺畅、回复是否耐心</span>
+                        </div>
+                        <div class="stars" data-rating="communication">
+                            <span class="star" data-value="1">★</span>
+                            <span class="star" data-value="2">★</span>
+                            <span class="star" data-value="3">★</span>
+                            <span class="star" data-value="4">★</span>
+                            <span class="star" data-value="5">★</span>
+                        </div>
+                        <input type="hidden" id="communicationRating" value="">
+                    </div>
+
+                    <div class="rating-group">
+                        <div class="rating-label">
+                            <span>宠物状态反馈</span>
+                            <span class="rating-desc">宠物状态是否良好、日报是否详细</span>
+                        </div>
+                        <div class="stars" data-rating="petCondition">
+                            <span class="star" data-value="1">★</span>
+                            <span class="star" data-value="2">★</span>
+                            <span class="star" data-value="3">★</span>
+                            <span class="star" data-value="4">★</span>
+                            <span class="star" data-value="5">★</span>
+                        </div>
+                        <input type="hidden" id="petConditionRating" value="">
+                    </div>
+                </div>
+
+                <div class="overall-rating" id="overallRatingSection" style="display: none;">
+                    <div class="overall-rating-title">综合得分（自动计算）</div>
+                    <div class="overall-rating-value" id="overallRatingValue">0</div>
+                    <div class="overall-rating-stars" id="overallRatingStars">☆☆☆☆☆</div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">评价内容</div>
+                    <div class="form-group">
+                        <label for="content">评价详情（选填）</label>
+                        <textarea id="content" placeholder="请分享您的寄养体验，帮助其他用户了解对方..."></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">提交评价</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script>
+        let currentUser = null;
+        let completedRequests = [];
+        let ratings = {
+            responsibility: 0,
+            communication: 0,
+            petCondition: 0
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            initStarRating();
+            loadCompletedRequests();
+
+            document.getElementById('reviewForm').addEventListener('submit', handleSubmit);
+        });
+
+        function checkAuth() {
+            if (!authToken) {
+                window.location.href = 'index.html';
+                return;
+            }
+            fetchUserInfo();
+        }
+
+        async function fetchUserInfo() {
+            try {
+                currentUser = await apiRequest('/api/auth/me');
+            } catch (error) {
+                clearAuthToken();
+                window.location.href = 'index.html';
+            }
+        }
+
+        function initStarRating() {
+            document.querySelectorAll('.stars').forEach(starContainer => {
+                const ratingType = starContainer.dataset.rating;
+                const stars = starContainer.querySelectorAll('.star');
+                const hiddenInput = document.getElementById(ratingType + 'Rating');
+
+                stars.forEach(star => {
+                    star.addEventListener('click', function() {
+                        const value = parseInt(this.dataset.value);
+                        ratings[ratingType] = value;
+                        hiddenInput.value = value;
+                        updateStars(stars, value);
+                        updateOverallRating();
+                    });
+
+                    star.addEventListener('mouseenter', function() {
+                        const value = parseInt(this.dataset.value);
+                        updateStars(stars, value);
+                    });
+
+                    star.addEventListener('mouseleave', function() {
+                        updateStars(stars, ratings[ratingType]);
+                    });
+                });
+            });
+        }
+
+        function updateStars(stars, value) {
+            stars.forEach((star, index) => {
+                if (index < value) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+
+        function updateOverallRating() {
+            const { responsibility, communication, petCondition } = ratings;
+
+            if (responsibility > 0 && communication > 0 && petCondition > 0) {
+                const avg = Math.round((responsibility + communication + petCondition) / 3);
+                document.getElementById('overallRatingSection').style.display = 'block';
+                document.getElementById('overallRatingValue').textContent = avg;
+                document.getElementById('overallRatingStars').textContent =
+                    '★'.repeat(avg) + '☆'.repeat(5 - avg);
+            } else {
+                document.getElementById('overallRatingSection').style.display = 'none';
+            }
+        }
+
+        async function loadCompletedRequests() {
+            try {
+                const requests = await getFosterRequests();
+                const select = document.getElementById('requestId');
+
+                completedRequests = requests.content.filter(req =>
+                    req.status === 'Completed'
+                );
+
+                if (completedRequests.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = '暂无可评价的寄养申请';
+                    select.appendChild(option);
+                    return;
+                }
+
+                completedRequests.forEach(req => {
+                    const option = document.createElement('option');
+                    option.value = req.id;
+                    const otherUser = currentUser.id === req.ownerId
+                        ? `寄养人: ${req.fostererUsername}`
+                        : `宠物主人: ${req.ownerUsername}`;
+                    option.textContent = `#${req.id} - ${req.petName} (${req.startDate} ~ ${req.endDate}) - ${otherUser}`;
+                    option.dataset.revieweeId = currentUser.id === req.ownerId
+                        ? req.fostererId
+                        : req.ownerId;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+
+            const requestId = parseInt(document.getElementById('requestId').value);
+            const content = document.getElementById('content').value;
+
+            if (!requestId) {
+                showMessage('请选择寄养申请', 'error');
+                return;
+            }
+
+            if (ratings.responsibility === 0 || ratings.communication === 0 || ratings.petCondition === 0) {
+                showMessage('请完成所有维度的评分', 'error');
+                return;
+            }
+
+            const selectedOption = document.querySelector('#requestId option:checked');
+            const revieweeId = parseInt(selectedOption.dataset.revieweeId);
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '提交中...';
+
+            try {
+                await createReview({
+                    requestId,
+                    revieweeId,
+                    responsibilityRating: ratings.responsibility,
+                    communicationRating: ratings.communication,
+                    petConditionRating: ratings.petCondition,
+                    content
+                });
+
+                showMessage('评价提交成功！');
+                setTimeout(() => {
+                    window.location.href = 'reviews.html';
+                }, 1500);
+            } catch (error) {
+                showMessage(error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '提交评价';
+            }
+        }
+    </script>
+</body>
+</html>
