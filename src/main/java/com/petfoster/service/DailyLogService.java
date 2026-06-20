@@ -419,6 +419,10 @@ public class DailyLogService {
         List<NotificationEvent.NotificationEntry> allEntries = new ArrayList<>();
 
         for (FosterRequest request : inProgressRequests) {
+            if (request.getFostererId() == null) {
+                continue;
+            }
+
             LocalDate effectiveStartDate = request.getStartDate().isAfter(startDate)
                     ? request.getStartDate() : startDate;
 
