@@ -51,13 +51,15 @@ public class FosterRequestService {
 
     public PageResponse<FosterRequestDTO.RequestResponse> getRequests(
             int page, int size, String sort,
-            FosterRequest.Status status, Long ownerId, Long fostererId, Long petId) {
+            FosterRequest.Status status, Long ownerId, Long fostererId, Long petId,
+            LocalDate startDateFrom, LocalDate startDateTo, String breed) {
 
         Sort sortObj = parseSort(sort);
         Pageable pageable = PageRequest.of(page, size, sortObj);
 
         Page<FosterRequest> requestPage = requestRepository.searchRequests(
-                status, ownerId, fostererId, petId, pageable);
+                status, ownerId, fostererId, petId,
+                startDateFrom, startDateTo, breed, pageable);
 
         return buildPageResponse(requestPage);
     }
@@ -69,12 +71,14 @@ public class FosterRequestService {
     }
 
     public PageResponse<FosterRequestDTO.RequestResponse> getMyRequests(
-            Long userId, int page, int size, String sort) {
+            Long userId, int page, int size, String sort,
+            FosterRequest.Status status, LocalDate startDateFrom, LocalDate startDateTo, String breed) {
 
         Sort sortObj = parseSort(sort);
         Pageable pageable = PageRequest.of(page, size, sortObj);
 
-        Page<FosterRequest> requestPage = requestRepository.findByUserId(userId, pageable);
+        Page<FosterRequest> requestPage = requestRepository.findByUserIdWithFilters(
+                userId, status, startDateFrom, startDateTo, breed, pageable);
         return buildPageResponse(requestPage);
     }
 

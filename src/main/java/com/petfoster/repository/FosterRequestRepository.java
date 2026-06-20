@@ -19,19 +19,37 @@ public interface FosterRequestRepository extends JpaRepository<FosterRequest, Lo
     @Query("SELECT r FROM FosterRequest r WHERE r.ownerId = :userId OR r.fostererId = :userId")
     List<FosterRequest> findByUserId(@Param("userId") Long userId);
 
-    @Query("SELECT r FROM FosterRequest r WHERE r.ownerId = :userId OR r.fostererId = :userId")
-    Page<FosterRequest> findByUserId(@Param("userId") Long userId, Pageable pageable);
+    @Query("SELECT r FROM FosterRequest r JOIN Pet p ON r.petId = p.id WHERE " +
+           "(r.ownerId = :userId OR r.fostererId = :userId) AND " +
+           "(:status IS NULL OR r.status = :status) AND " +
+           "(:startDateFrom IS NULL OR r.startDate >= :startDateFrom) AND " +
+           "(:startDateTo IS NULL OR r.startDate <= :startDateTo) AND " +
+           "(:breed IS NULL OR p.breed = :breed)")
+    Page<FosterRequest> findByUserIdWithFilters(
+            @Param("userId") Long userId,
+            @Param("status") FosterRequest.Status status,
+            @Param("startDateFrom") LocalDate startDateFrom,
+            @Param("startDateTo") LocalDate startDateTo,
+            @Param("breed") String breed,
+            Pageable pageable
+    );
 
-    @Query("SELECT r FROM FosterRequest r WHERE " +
+    @Query("SELECT r FROM FosterRequest r JOIN Pet p ON r.petId = p.id WHERE " +
            "(:status IS NULL OR r.status = :status) AND " +
            "(:ownerId IS NULL OR r.ownerId = :ownerId) AND " +
            "(:fostererId IS NULL OR r.fostererId = :fostererId) AND " +
-           "(:petId IS NULL OR r.petId = :petId)")
+           "(:petId IS NULL OR r.petId = :petId) AND " +
+           "(:startDateFrom IS NULL OR r.startDate >= :startDateFrom) AND " +
+           "(:startDateTo IS NULL OR r.startDate <= :startDateTo) AND " +
+           "(:breed IS NULL OR p.breed = :breed)")
     Page<FosterRequest> searchRequests(
             @Param("status") FosterRequest.Status status,
             @Param("ownerId") Long ownerId,
             @Param("fostererId") Long fostererId,
             @Param("petId") Long petId,
+            @Param("startDateFrom") LocalDate startDateFrom,
+            @Param("startDateTo") LocalDate startDateTo,
+            @Param("breed") String breed,
             Pageable pageable
     );
 
