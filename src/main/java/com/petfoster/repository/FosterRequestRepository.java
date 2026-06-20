@@ -84,7 +84,7 @@ public interface FosterRequestRepository extends JpaRepository<FosterRequest, Lo
 
     long countByOwnerId(Long ownerId);
 
-    @Query("SELECT COUNT(r) FROM FosterRequest r WHERE (r.ownerId = :userId OR r.fostererId = :userId) " +
+    @Query("SELECT COUNT(r) FROM FosterRequest r WHERE r.fostererId = :userId " +
            "AND r.status = com.petfoster.entity.FosterRequest$Status.Completed")
     long countCompletedByUserId(@Param("userId") Long userId);
 }

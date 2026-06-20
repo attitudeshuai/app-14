@@ -67,7 +67,10 @@ public class SecurityConfig {
                                 "/api/fosterrequests/**",
                                 "/api/fosterdailylogs/**",
                                 "/api/fosterreviews/**",
-                                "/api/stats/**"
+                                "/api/stats/overview",
+                                "/api/stats/trend",
+                                "/api/stats/popular-breeds",
+                                "/api/stats/foster-duration"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
