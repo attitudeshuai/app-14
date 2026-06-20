@@ -6,10 +6,12 @@ import com.petfoster.dto.DailyLogDTO;
 import com.petfoster.entity.FosterDailyLog;
 import com.petfoster.entity.FosterRequest;
 import com.petfoster.entity.Notification;
+import com.petfoster.entity.Pet;
 import com.petfoster.entity.User;
 import com.petfoster.event.NotificationEvent;
 import com.petfoster.repository.FosterDailyLogRepository;
 import com.petfoster.repository.FosterRequestRepository;
+import com.petfoster.repository.PetRepository;
 import com.petfoster.repository.UserRepository;
 import com.petfoster.util.EntityMapper;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +41,7 @@ public class DailyLogService {
     private final FosterDailyLogRepository logRepository;
     private final FosterRequestRepository requestRepository;
     private final UserRepository userRepository;
+    private final PetRepository petRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final FileStorageService fileStorageService;
 
@@ -350,6 +353,112 @@ public class DailyLogService {
                 .first(page.isFirst())
                 .last(page.isLast())
                 .build();
+    }
+
+    public int sendDailyLogReminders() {
+        LocalDate today = LocalDate.now();
+        List<FosterRequest> inProgressRequests = requestRepository.findInProgressOnDate(today);
+
+        if (inProgressRequests.isEmpty()) {
+            log.info("今日无进行中的寄养申请，跳过日报提醒");
+            return 0;
+        }
+
+        int reminderCount = 0;
+        List<NotificationEvent.NotificationEntry> allEntries = new ArrayList<>();
+
+        for (FosterRequest request : inProgressRequests) {
+            if (request.getFostererId() == null) {
+                continue;
+            }
+
+            boolean hasTodayLog = logRepository.existsByRequestIdAndLogDate(request.getId(), today);
+
+            if (!hasTodayLog) {
+                Pet pet = petRepository.findById(request.getPetId()).orElse(null);
+                String petName = pet != null ? pet.getName() : "宠物";
+
+                String title = "今日寄养日报提醒";
+                String content = String.format(
+                        "请记得为宠物「%s」填写今天（%s）的寄养日报，让主人了解宠物的状况。",
+                        petName, today);
+
+                allEntries.add(NotificationEvent.entry(
+                        request.getFostererId(),
+                        Notification.Type.DAILY_LOG_REMINDER,
+                        title,
+                        content,
+                        request.getId(),
+                        Notification.RelatedType.FOSTER_REQUEST
+                ));
+                reminderCount++;
+                log.info("已生成日报提醒: requestId={}, fostererId={}, petName={}",
+                        request.getId(), request.getFostererId(), petName);
+            }
+        }
+
+        if (!allEntries.isEmpty()) {
+            eventPublisher.publishEvent(new NotificationEvent(allEntries));
+            log.info("日报提醒发送完成，共发送 {} 条提醒", reminderCount);
+        }
+
+        return reminderCount;
+    }
+
+    public int sendMissedDailyLogReminders(int missedDays) {
+        LocalDate today = LocalDate.now();
+        LocalDate startDate = today.minusDays(missedDays - 1);
+        List<FosterRequest> inProgressRequests = requestRepository.findAllInProgressWithFosterer();
+
+        if (inProgressRequests.isEmpty()) {
+            log.info("无进行中的寄养申请，跳过连续未写日报提醒");
+            return 0;
+        }
+
+        int reminderCount = 0;
+        List<NotificationEvent.NotificationEntry> allEntries = new ArrayList<>();
+
+        for (FosterRequest request : inProgressRequests) {
+            LocalDate effectiveStartDate = request.getStartDate().isAfter(startDate)
+                    ? request.getStartDate() : startDate;
+
+            if (effectiveStartDate.isAfter(today)) {
+                continue;
+            }
+
+            long daysInRange = today.toEpochDay() - effectiveStartDate.toEpochDay() + 1;
+            long logCount = logRepository.countByRequestIdAndLogDateBetween(
+                    request.getId(), effectiveStartDate, today);
+
+            if (logCount == 0 && daysInRange >= missedDays) {
+                Pet pet = petRepository.findById(request.getPetId()).orElse(null);
+                String petName = pet != null ? pet.getName() : "宠物";
+
+                String title = "连续未填写日报提醒";
+                String content = String.format(
+                        "您已连续 %d 天未为宠物「%s」填写寄养日报，请尽快补填，避免主人担心。",
+                        missedDays, petName);
+
+                allEntries.add(NotificationEvent.entry(
+                        request.getFostererId(),
+                        Notification.Type.DAILY_LOG_MISSED_REMINDER,
+                        title,
+                        content,
+                        request.getId(),
+                        Notification.RelatedType.FOSTER_REQUEST
+                ));
+                reminderCount++;
+                log.info("已生成连续未写日报提醒: requestId={}, fostererId={}, petName={}, 连续{}天未写",
+                        request.getId(), request.getFostererId(), petName, missedDays);
+            }
+        }
+
+        if (!allEntries.isEmpty()) {
+            eventPublisher.publishEvent(new NotificationEvent(allEntries));
+            log.info("连续未写日报提醒发送完成，共发送 {} 条提醒", reminderCount);
+        }
+
+        return reminderCount;
     }
 
     private Sort parseSort(String sort) {

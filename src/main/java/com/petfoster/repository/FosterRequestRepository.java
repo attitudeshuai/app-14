@@ -55,4 +55,12 @@ public interface FosterRequestRepository extends JpaRepository<FosterRequest, Lo
     @Query("SELECT r FROM FosterRequest r WHERE r.status = com.petfoster.entity.FosterRequest$Status.Approved " +
            "AND r.startDate < :threshold")
     List<FosterRequest> findApprovedBeforeDate(@Param("threshold") LocalDate threshold);
+
+    @Query("SELECT r FROM FosterRequest r WHERE r.status = com.petfoster.entity.FosterRequest$Status.InProgress " +
+           "AND r.startDate <= :date AND r.endDate >= :date")
+    List<FosterRequest> findInProgressOnDate(@Param("date") LocalDate date);
+
+    @Query("SELECT r FROM FosterRequest r WHERE r.status = com.petfoster.entity.FosterRequest$Status.InProgress " +
+           "AND r.fostererId IS NOT NULL")
+    List<FosterRequest> findAllInProgressWithFosterer();
 }
