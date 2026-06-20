@@ -51,4 +51,8 @@ public interface FosterRequestRepository extends JpaRepository<FosterRequest, Lo
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
             @Param("excludeId") Long excludeId);
+
+    @Query("SELECT r FROM FosterRequest r WHERE r.status = com.petfoster.entity.FosterRequest$Status.Approved " +
+           "AND r.startDate < :threshold")
+    List<FosterRequest> findApprovedBeforeDate(@Param("threshold") LocalDate threshold);
 }

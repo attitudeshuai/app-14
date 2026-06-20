@@ -372,6 +372,47 @@ public class FosterRequestService {
         return EntityMapper.toFosterRequestResponse(r, pet, owner, fosterer);
     }
 
+    @Transactional
+    public int cancelExpiredApprovedRequests(int timeoutDays) {
+        LocalDate threshold = LocalDate.now().minusDays(timeoutDays);
+        List<FosterRequest> expiredRequests = requestRepository.findApprovedBeforeDate(threshold);
+
+        for (FosterRequest request : expiredRequests) {
+            request.setStatus(FosterRequest.Status.Cancelled);
+            requestRepository.save(request);
+            log.info("寄养申请超时自动取消: requestId={}, startDate={}, 超时天数={}",
+                    request.getId(), request.getStartDate(), timeoutDays);
+
+            Pet pet = petRepository.findById(request.getPetId()).orElse(null);
+            String petName = pet != null ? pet.getName() : "宠物";
+            String title = "寄养申请超时自动取消";
+            String content = String.format(
+                    "宠物「%s」的寄养申请因批准后超过 %d 天未开始，已自动取消（寄养开始日期：%s）",
+                    petName, timeoutDays, request.getStartDate());
+
+            List<NotificationEvent.NotificationEntry> entries = new java.util.ArrayList<>();
+            entries.add(NotificationEvent.entry(
+                    request.getOwnerId(),
+                    Notification.Type.FOSTER_REQUEST_TIMEOUT,
+                    title, content,
+                    request.getId(),
+                    Notification.RelatedType.FOSTER_REQUEST
+            ));
+            if (request.getFostererId() != null) {
+                entries.add(NotificationEvent.entry(
+                        request.getFostererId(),
+                        Notification.Type.FOSTER_REQUEST_TIMEOUT,
+                        title, content,
+                        request.getId(),
+                        Notification.RelatedType.FOSTER_REQUEST
+                ));
+            }
+            eventPublisher.publishEvent(new NotificationEvent(entries));
+        }
+
+        return expiredRequests.size();
+    }
+
     private Sort parseSort(String sort) {
         if (!StringUtils.hasText(sort)) {
             return Sort.by(Sort.Direction.DESC, "createdAt");
