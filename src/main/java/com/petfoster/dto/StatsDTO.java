@@ -61,4 +61,39 @@ public class StatsDTO {
         private String date;
         private long count;
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PetBreedRank {
+        private String breed;
+        private String species;
+        private long requestCount;
+        private double percentage;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PopularBreedStats {
+        private List<PetBreedRank> topBreeds;
+        private long totalRequests;
+        private int totalBreeds;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class FosterDurationStats {
+        private double averageDays;
+        private double medianDays;
+        private long shortestDays;
+        private long longestDays;
+        private long totalCompletedRequests;
+        private Map<String, Double> averageBySpecies;
+        private Map<String, Double> averageByBreed;
+    }
 }

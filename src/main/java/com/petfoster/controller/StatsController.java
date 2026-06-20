@@ -32,4 +32,17 @@ public class StatsController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return ApiResponse.success(statsService.getTrendStats(startDate, endDate));
     }
+
+    @GetMapping("/popular-breeds")
+    @Operation(summary = "热门宠物品种排行", description = "按寄养申请数量统计热门宠物品种排行榜")
+    public ApiResponse<StatsDTO.PopularBreedStats> getPopularBreeds(
+            @RequestParam(defaultValue = "10") int topN) {
+        return ApiResponse.success(statsService.getPopularBreedStats(topN));
+    }
+
+    @GetMapping("/foster-duration")
+    @Operation(summary = "平均寄养时长统计", description = "统计寄养时长分布、平均值、中位数及按品种/物种分类的平均时长")
+    public ApiResponse<StatsDTO.FosterDurationStats> getFosterDuration() {
+        return ApiResponse.success(statsService.getFosterDurationStats());
+    }
 }

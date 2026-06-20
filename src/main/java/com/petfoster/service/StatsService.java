@@ -207,4 +207,158 @@ public class StatsService {
 
         return allUsers.stream().limit(limit).toList();
     }
+
+    public StatsDTO.PopularBreedStats getPopularBreedStats(int topN) {
+        List<FosterRequest> allRequests = requestRepository.findAll();
+        Map<Long, Pet> petMap = new HashMap<>();
+        for (Pet pet : petRepository.findAll()) {
+            petMap.put(pet.getId(), pet);
+        }
+
+        Map<String, long[]> breedStats = new HashMap<>();
+        long totalRequests = 0;
+
+        for (FosterRequest req : allRequests) {
+            Pet pet = petMap.get(req.getPetId());
+            if (pet == null) continue;
+
+            String breed = pet.getBreed();
+            if (breed == null || breed.isEmpty()) {
+                breed = "未知品种";
+            }
+            String species = pet.getSpecies();
+
+            breedStats.computeIfAbsent(breed, k -> new long[]{0, 0});
+            breedStats.get(breed)[0]++;
+            breedStats.get(breed)[1] = species != null ? species.hashCode() : 0;
+            totalRequests++;
+        }
+
+        List<StatsDTO.PetBreedRank> breedRanks = new ArrayList<>();
+        for (Map.Entry<String, long[]> entry : breedStats.entrySet()) {
+            String breed = entry.getKey();
+            long count = entry.getValue()[0];
+            String species = "";
+
+            Pet samplePet = petMap.values().stream()
+                    .filter(p -> breed.equals(p.getBreed()) || ("未知品种".equals(breed) && (p.getBreed() == null || p.getBreed().isEmpty())))
+                    .findFirst()
+                    .orElse(null);
+            if (samplePet != null) {
+                species = samplePet.getSpecies();
+            }
+
+            double percentage = totalRequests > 0 ? Math.round(count * 10000.0 / totalRequests) / 100.0 : 0.0;
+
+            breedRanks.add(StatsDTO.PetBreedRank.builder()
+                    .breed(breed)
+                    .species(species)
+                    .requestCount(count)
+                    .percentage(percentage)
+                    .build());
+        }
+
+        breedRanks.sort((b1, b2) -> {
+            int countCompare = Long.compare(b2.getRequestCount(), b1.getRequestCount());
+            if (countCompare != 0) return countCompare;
+            return b1.getBreed().compareTo(b2.getBreed());
+        });
+
+        if (topN > 0 && breedRanks.size() > topN) {
+            breedRanks = breedRanks.subList(0, topN);
+        }
+
+        return StatsDTO.PopularBreedStats.builder()
+                .topBreeds(breedRanks)
+                .totalRequests(totalRequests)
+                .totalBreeds(breedStats.size())
+                .build();
+    }
+
+    public StatsDTO.FosterDurationStats getFosterDurationStats() {
+        List<FosterRequest> completedRequests = requestRepository.findAll().stream()
+                .filter(r -> r.getStatus() == FosterRequest.Status.Completed)
+                .toList();
+
+        if (completedRequests.isEmpty()) {
+            return StatsDTO.FosterDurationStats.builder()
+                    .averageDays(0)
+                    .medianDays(0)
+                    .shortestDays(0)
+                    .longestDays(0)
+                    .totalCompletedRequests(0)
+                    .averageBySpecies(new HashMap<>())
+                    .averageByBreed(new HashMap<>())
+                    .build();
+        }
+
+        Map<Long, Pet> petMap = new HashMap<>();
+        for (Pet pet : petRepository.findAll()) {
+            petMap.put(pet.getId(), pet);
+        }
+
+        List<Long> durations = new ArrayList<>();
+        Map<String, List<Long>> durationsBySpecies = new HashMap<>();
+        Map<String, List<Long>> durationsByBreed = new HashMap<>();
+
+        for (FosterRequest req : completedRequests) {
+            if (req.getStartDate() == null || req.getEndDate() == null) continue;
+
+            long days = java.time.temporal.ChronoUnit.DAYS.between(req.getStartDate(), req.getEndDate()) + 1;
+            durations.add(days);
+
+            Pet pet = petMap.get(req.getPetId());
+            if (pet != null) {
+                String species = pet.getSpecies();
+                if (species != null && !species.isEmpty()) {
+                    durationsBySpecies.computeIfAbsent(species, k -> new ArrayList<>()).add(days);
+                }
+
+                String breed = pet.getBreed();
+                if (breed == null || breed.isEmpty()) {
+                    breed = "未知品种";
+                }
+                durationsByBreed.computeIfAbsent(breed, k -> new ArrayList<>()).add(days);
+            }
+        }
+
+        Collections.sort(durations);
+
+        double averageDays = durations.stream().mapToLong(Long::longValue).average().orElse(0.0);
+        averageDays = Math.round(averageDays * 100.0) / 100.0;
+
+        double medianDays;
+        int size = durations.size();
+        if (size % 2 == 0) {
+            medianDays = (durations.get(size / 2 - 1) + durations.get(size / 2)) / 2.0;
+        } else {
+            medianDays = durations.get(size / 2);
+        }
+        medianDays = Math.round(medianDays * 100.0) / 100.0;
+
+        long shortestDays = durations.get(0);
+        long longestDays = durations.get(durations.size() - 1);
+
+        Map<String, Double> averageBySpecies = new HashMap<>();
+        for (Map.Entry<String, List<Long>> entry : durationsBySpecies.entrySet()) {
+            double avg = entry.getValue().stream().mapToLong(Long::longValue).average().orElse(0.0);
+            averageBySpecies.put(entry.getKey(), Math.round(avg * 100.0) / 100.0);
+        }
+
+        Map<String, Double> averageByBreed = new HashMap<>();
+        for (Map.Entry<String, List<Long>> entry : durationsByBreed.entrySet()) {
+            double avg = entry.getValue().stream().mapToLong(Long::longValue).average().orElse(0.0);
+            averageByBreed.put(entry.getKey(), Math.round(avg * 100.0) / 100.0);
+        }
+
+        return StatsDTO.FosterDurationStats.builder()
+                .averageDays(averageDays)
+                .medianDays(medianDays)
+                .shortestDays(shortestDays)
+                .longestDays(longestDays)
+                .totalCompletedRequests(completedRequests.size())
+                .averageBySpecies(averageBySpecies)
+                .averageByBreed(averageByBreed)
+                .build();
+    }
 }
