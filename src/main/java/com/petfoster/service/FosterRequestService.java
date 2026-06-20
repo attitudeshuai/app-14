@@ -9,6 +9,7 @@ import com.petfoster.entity.Pet;
 import com.petfoster.entity.User;
 import com.petfoster.event.NotificationEvent;
 import com.petfoster.repository.FosterRequestRepository;
+import com.petfoster.repository.NotificationRepository;
 import com.petfoster.repository.PetRepository;
 import com.petfoster.repository.UserRepository;
 import com.petfoster.util.EntityMapper;
@@ -38,6 +39,7 @@ public class FosterRequestService {
     private final FosterRequestRepository requestRepository;
     private final PetRepository petRepository;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     private static final Set<FosterRequest.Status> ALLOWED_FROM_PENDING = Set.of(
@@ -411,6 +413,68 @@ public class FosterRequestService {
         }
 
         return expiredRequests.size();
+    }
+
+    @Transactional
+    public int sendReturnReminders(int daysBefore) {
+        LocalDate endDate = LocalDate.now().plusDays(daysBefore);
+        List<FosterRequest> requests = requestRepository.findInProgressEndingOnDate(endDate);
+
+        int reminderCount = 0;
+        for (FosterRequest request : requests) {
+            Pet pet = petRepository.findById(request.getPetId()).orElse(null);
+            String petName = pet != null ? pet.getName() : "宠物";
+
+            String title = String.format("寄养归还提醒：还有 %d 天", daysBefore);
+            String content = String.format(
+                    "宠物「%s」的寄养将于 %s 到期，请记得按时归还宠物，感谢您的配合！",
+                    petName, request.getEndDate());
+
+            List<NotificationEvent.NotificationEntry> entries = new java.util.ArrayList<>();
+
+            boolean ownerReminded = notificationRepository.existsByUserIdAndTypeAndRelatedIdAndRelatedType(
+                    request.getOwnerId(),
+                    Notification.Type.FOSTER_RETURN_REMINDER,
+                    request.getId(),
+                    Notification.RelatedType.FOSTER_REQUEST
+            );
+            if (!ownerReminded) {
+                entries.add(NotificationEvent.entry(
+                        request.getOwnerId(),
+                        Notification.Type.FOSTER_RETURN_REMINDER,
+                        title, content,
+                        request.getId(),
+                        Notification.RelatedType.FOSTER_REQUEST
+                ));
+            }
+
+            if (request.getFostererId() != null) {
+                boolean fostererReminded = notificationRepository.existsByUserIdAndTypeAndRelatedIdAndRelatedType(
+                        request.getFostererId(),
+                        Notification.Type.FOSTER_RETURN_REMINDER,
+                        request.getId(),
+                        Notification.RelatedType.FOSTER_REQUEST
+                );
+                if (!fostererReminded) {
+                    entries.add(NotificationEvent.entry(
+                            request.getFostererId(),
+                            Notification.Type.FOSTER_RETURN_REMINDER,
+                            title, content,
+                            request.getId(),
+                            Notification.RelatedType.FOSTER_REQUEST
+                    ));
+                }
+            }
+
+            if (!entries.isEmpty()) {
+                eventPublisher.publishEvent(new NotificationEvent(entries));
+                reminderCount += entries.size();
+                log.info("寄养归还提醒已发送: requestId={}, 提前天数={}, 接收人数={}",
+                        request.getId(), daysBefore, entries.size());
+            }
+        }
+
+        return reminderCount;
     }
 
     private Sort parseSort(String sort) {

@@ -45,6 +45,9 @@ foster:
   request:
     timeout-days: ${FOSTER_TIMEOUT_DAYS:7}
     timeout-cron: ${FOSTER_TIMEOUT_CRON:0 0 2 * * ?}
+  return-reminder:
+    days-before: ${FOSTER_RETURN_REMINDER_DAYS:2}
+    cron: ${FOSTER_RETURN_REMINDER_CRON:0 0 9 * * ?}
   daily-log:
     reminder-cron: ${DAILY_LOG_REMINDER_CRON:0 0 20 * * ?}
     missed-days: ${DAILY_LOG_MISSED_DAYS:2}

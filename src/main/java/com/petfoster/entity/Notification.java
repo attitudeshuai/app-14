@@ -56,7 +56,8 @@ public class Notification {
         FOSTER_REQUEST_CREATED,
         FOSTER_REQUEST_TIMEOUT,
         DAILY_LOG_REMINDER,
-        DAILY_LOG_MISSED_REMINDER
+        DAILY_LOG_MISSED_REMINDER,
+        FOSTER_RETURN_REMINDER
     }
 
     public enum RelatedType {
